@@ -15,7 +15,7 @@ sourceSets {
 dependencies {
     implementation 'com.squareup:javapoet:1.11.0'
     implementation 'com.google.android:android:4.1.1.4'
-//    compile 'com.google.android:support-v4:r7'
+    implementation 'com.google.android:support-v4:r7'
 
 //    compile "androidx.core:core:1.0.0"
 //    compile "androidx.annotation:annotation:1.0.0"
