@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.util.Pair;
 
 import com.squareup.javapoet.ClassName;
@@ -29,6 +30,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
@@ -121,30 +123,20 @@ public class Processor extends AbstractProcessor {
         // 4) add methods for all optional fields
         addSetters(name, annotatedElement, builder, required, optional);
 
-        TypeMirror typeMirrorSupportLibrary = Util.getTypeMirror(elementUtils, Util.ANDROID_SUPPORT_FRAGMENT_PACKAGE_NAME);
-        TypeMirror typeMirrorAndroidX = Util.getTypeMirror(elementUtils, Util.ANDROID_X_FRAGMENT_PACKAGE_NAME);
-
         // 5) add buildIntent method to create an intent
         addBuildIntentFunction(annotatedElement, builder, all);
-        addStartActivity(annotatedElement, builder, typeMirrorSupportLibrary, typeMirrorAndroidX);
-        addCreateFragment(annotatedElement, builder, typeMirrorSupportLibrary, typeMirrorAndroidX);
+        addStartActivity(annotatedElement, builder);
+        addCreateFragment(annotatedElement, builder);
         addCreate(annotatedElement, builder);
 
         // 6) add build method to create a bundle
         addBuildBundleFunction(annotatedElement, builder, all);
-//
+
         // 7) add inject method to read all fields into an annotated class
-        boolean kotlin = annotatedElement.getAnnotation(BundleBuilder.class).isKotlinClass();
-        addInjectFunction(annotatedElement, builder, all, kotlin);
+        addInjectFunction(annotatedElement, builder, all);
 
         // 8) add getter functions for each fields
         addGetters(annotatedElement, builder, all);
-
-        // 9) generate persist and restore function
-        boolean generateSaveRestore = annotatedElement.getAnnotation(BundleBuilder.class).generatePersist();
-        if (generateSaveRestore) {
-            addPersist(annotatedElement, builder, all, kotlin);
-        }
 
         return builder.build();
     }
@@ -222,7 +214,7 @@ public class Processor extends AbstractProcessor {
         builder.addMethod(buildIntentMethod.build());
     }
 
-    private void addStartActivity(Element annotatedElement, TypeSpec.Builder builder, TypeMirror typeMirrorSupportLibrary, TypeMirror typeMirrorAndroidX) {
+    private void addStartActivity(Element annotatedElement, TypeSpec.Builder builder) {
         if (Util.checkIsOrExtendsActivity(elementUtils, typeUtils, annotatedElement)) {
             MethodSpec.Builder buildMethod = MethodSpec.methodBuilder("startActivity")
                     .addModifiers(Modifier.PUBLIC)
@@ -239,23 +231,13 @@ public class Processor extends AbstractProcessor {
                     .addStatement("activity.startActivityForResult(intent, requestCode)");
             builder.addMethod(buildMethod.build());
 
-            if (typeMirrorAndroidX != null) {
-                buildMethod = MethodSpec.methodBuilder("startActivityForResult")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addParameter(ClassName.get(typeMirrorAndroidX), "fragment")
-                        .addParameter(int.class, "requestCode")
-                        .addStatement("$T intent = $L", Intent.class, "buildIntent(fragment.getContext())")
-                        .addStatement("fragment.startActivityForResult(intent, requestCode)");
-                builder.addMethod(buildMethod.build());
-            }else if (typeMirrorSupportLibrary != null) {
-                buildMethod = MethodSpec.methodBuilder("startActivityForResult")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addParameter(ClassName.get(typeMirrorSupportLibrary), "fragment")
-                        .addParameter(int.class, "requestCode")
-                        .addStatement("$T intent = $L", Intent.class, "buildIntent(fragment.getContext())")
-                        .addStatement("fragment.startActivityForResult(intent, requestCode)");
-                builder.addMethod(buildMethod.build());
-            }
+            buildMethod = MethodSpec.methodBuilder("startActivityForResult")
+                    .addModifiers(Modifier.PUBLIC)
+                    .addParameter(Fragment.class, "fragment")
+                    .addParameter(int.class, "requestCode")
+                    .addStatement("$T intent = $L", Intent.class, "buildIntent(fragment.getContext())")
+                    .addStatement("fragment.startActivityForResult(intent, requestCode)");
+            builder.addMethod(buildMethod.build());
 
             buildMethod = MethodSpec.methodBuilder("startActivityForResult")
                     .addModifiers(Modifier.PUBLIC)
@@ -268,8 +250,8 @@ public class Processor extends AbstractProcessor {
         }
     }
 
-    private void addCreateFragment(Element annotatedElement, TypeSpec.Builder builder, TypeMirror typeMirrorSupportLibrary, TypeMirror typeMirrorAndroidX) {
-        if (Util.checkIsOrExtendsFragment(elementUtils, typeUtils, annotatedElement, typeMirrorSupportLibrary, typeMirrorAndroidX)) {
+    private void addCreateFragment(Element annotatedElement, TypeSpec.Builder builder) {
+        if (Util.checkIsOrExtendsFragment(elementUtils, typeUtils, annotatedElement)) {
             ClassName className = ClassName.get(Util.getPackageName(annotatedElement), annotatedElement.getSimpleName().toString());
             MethodSpec.Builder buildMethod = MethodSpec.methodBuilder("createFragment")
                     .addModifiers(Modifier.PUBLIC)
@@ -310,14 +292,14 @@ public class Processor extends AbstractProcessor {
         builder.addMethod(buildMethod.build());
     }
 
-    private void addInjectFunction(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all, boolean kotlin) {
+    private void addInjectFunction(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all) {
         MethodSpec.Builder injectMethod = MethodSpec.methodBuilder("inject")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(Bundle.class, "args")
                 .addParameter(TypeName.get(annotatedElement.asType()), "annotatedClass");
 
         for (ArgElement e : all) {
-            e.addFieldToInjection(kotlin, injectMethod);
+            e.addFieldToInjection(injectMethod);
         }
 
         builder.addMethod(injectMethod.build());
@@ -331,34 +313,6 @@ public class Processor extends AbstractProcessor {
         for (ArgElement e : all) {
             e.addFieldGetter(annotatedElement, builder);
         }
-    }
-
-    private void addPersist(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all, boolean kotlin) {
-        MethodSpec.Builder persistMethod = MethodSpec.methodBuilder("persist")
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(Bundle.class, "outState")
-                .addParameter(TypeName.get(annotatedElement.asType()), "annotatedClass");
-
-        persistMethod.beginControlFlow("if (outState != null)");
-        for (ArgElement e : all) {
-            e.addFieldToPersist(elementUtils, typeUtils, messager, kotlin, persistMethod);
-        }
-        persistMethod.endControlFlow();
-
-        builder.addMethod(persistMethod.build());
-    }
-
-    private void addRestore(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all, boolean kotlin) {
-        MethodSpec.Builder restoreMethod = MethodSpec.methodBuilder("restore")
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(Bundle.class, "savedInstanceState")
-                .addParameter(TypeName.get(annotatedElement.asType()), "annotatedClass");
-
-//        for (ArgElement e : all) {
-//            e.addFieldToInjection(injectMethod);
-//        }
-
-        builder.addMethod(restoreMethod.build());
     }
 
     // --------------------

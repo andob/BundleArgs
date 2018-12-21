@@ -23,13 +23,13 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile "androidx.legacy:legacy-support-core-ui:1.0.0"
-    compile "androidx.appcompat:appcompat:1.0.0"
+    implementation "androidx.legacy:legacy-support-core-ui:1.0.0"
+    implementation "androidx.appcompat:appcompat:1.0.0"
 
     annotationProcessor project(':bundleargs-processor')
-    compile project(':bundleargs-annotation')
+    implementation project(':bundleargs-annotation')
 
 //    annotationProcessor 'com.github.MFlisar.BundleArgs:bundleargs-processor:-SNAPSHOT'
 //    compile 'com.github.MFlisar.BundleArgs:bundleargs-annotation:-SNAPSHOT'

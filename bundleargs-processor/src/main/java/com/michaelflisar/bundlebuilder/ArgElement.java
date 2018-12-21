@@ -110,41 +110,25 @@ public class ArgElement {
             }
 
             buildMethod
-                    .beginControlFlow("if ($N.get($S).first)", Util.FIELD_HASH_MAP_NAME, mParamName)
-                    .addStatement("bundle.put$L($S, ($T)$N.get($S).second)", bundleFunctionName, mParamName, mType, Util.FIELD_HASH_MAP_NAME, mParamName)
-                    //.beginControlFlow("if ($N)", mParamName + mParamIsSetPostFix)
-                    //.addStatement("bundle.put$L($S, $N)", bundleFunctionName, mParamName, mParamName)
-                    .endControlFlow();
+                    .addCode("try" +
+                            "\n{" +
+                                "\n\tif ("+Util.FIELD_HASH_MAP_NAME+".get(\""+mParamName+"\").first)"+
+                                    "\n\t\tbundle.put"+bundleFunctionName+"(\""+mParamName+"\", ("+mType+")"+Util.FIELD_HASH_MAP_NAME+".get(\""+mParamName+"\").second);"+
+                            "\n}" +
+                            "\ncatch (Exception ex) {}");
         } else {
             messager.printMessage(Diagnostic.Kind.ERROR, String.format("Field type \"%s\" not supported!", mType.toString()));
         }
     }
 
-    public void addFieldToInjection(boolean kotlin, MethodSpec.Builder injectMethod) {
+    public void addFieldToInjection(MethodSpec.Builder injectMethod) {
         if (!mOptional) {
             Util.addContainsCheckWithException(injectMethod, this, "args");
         }
-        injectMethod.beginControlFlow("if (args != null && args.containsKey($S))", mParamName);
-        if (kotlin) {
-            String setter = mElement.getSimpleName().toString();
-            setter = "set" + setter.substring(0, 1).toUpperCase() + setter.substring(1);
-            injectMethod.addStatement("annotatedClass.$N(($T) args.get($S))", setter, mType, mParamName);
-        } else {
-            injectMethod.addStatement("annotatedClass.$N = ($T) args.get($S)", mElement.getSimpleName().toString(), mType, mParamName);
-        }
 
-        injectMethod.endControlFlow();
-    }
-
-    public void addFieldToPersist(Elements elementUtils, Types typeUtils, Messager messager, boolean kotlin, MethodSpec.Builder persistMethod) {
-        String bundleFunction = Util.getBundleFunctionName(elementUtils, typeUtils, messager, mType);
-        if (kotlin) {
-            String getter = mElement.getSimpleName().toString();
-            getter = "get" + getter.substring(0, 1).toUpperCase() + getter.substring(1);
-            persistMethod.addStatement("outState.put$L($S, $N())", bundleFunction, mParamName, getter);
-        } else {
-            persistMethod.addStatement("outState.put$L($S, annotatedClass.$N)", bundleFunction, mParamName, mElement.getSimpleName().toString());
-        }
+        injectMethod.beginControlFlow("if (args != null && args.containsKey($S))", mParamName)
+                .addStatement("annotatedClass.$N = ($T) args.get($S)", mElement.getSimpleName().toString(), mType, mParamName)
+                .endControlFlow();
     }
 
     public void addSetter(TypeSpec.Builder builder, ClassName className, String prefix) {
@@ -171,7 +155,7 @@ public class ArgElement {
                 .beginControlFlow("if (bundle != null && bundle.containsKey($S))", mParamName)
                 .addStatement("return ($T) bundle.get($S)", mType, mParamName)
                 .nextControlFlow("else")
-                .addStatement("return annotatedClass.$L", mParamName)
+                .addStatement("return annotatedClass.$L",  mParamName)
                 .endControlFlow();
 
         builder.addMethod(getterMethod.build());
