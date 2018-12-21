@@ -172,3 +172,10 @@ This project is generally based on https://github.com/emilsjolander/IntentBuilde
 
 * conductor/fragment/class demo?
 * ???
+
+### Mods
+
+```
+implementation 'com.github.MFlisar.BundleArgs:bundleargs-annotation:1.6'
+kapt 'com.github.andob:BundleArgs:1.8'
+```
