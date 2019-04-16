@@ -18,6 +18,7 @@ import com.squareup.javapoet.TypeSpec;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -29,8 +30,8 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
@@ -38,6 +39,7 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
 public class Processor extends AbstractProcessor {
+
     // --------------------
     // General functions
     // --------------------
@@ -48,6 +50,8 @@ public class Processor extends AbstractProcessor {
     public Elements elementUtils;
     public Filer filer;
     public Messager messager;
+
+    public ActivityFieldRenameTask activityFieldRenameTask;
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -69,6 +73,15 @@ public class Processor extends AbstractProcessor {
         elementUtils = processingEnv.getElementUtils();
         filer = processingEnv.getFiler();
         messager = processingEnv.getMessager();
+
+        String activityFieldRenameFrom=processingEnv.getOptions().get("BundleBuilderActivityFieldRenameFrom");
+        String activityFieldRenameTo=processingEnv.getOptions().get("BundleBuilderActivityFieldRenameTo");
+        if (activityFieldRenameFrom!=null&&activityFieldRenameTo!=null)
+        {
+            activityFieldRenameTask =new ActivityFieldRenameTask();
+            activityFieldRenameTask.from=activityFieldRenameFrom.trim();
+            activityFieldRenameTask.to=activityFieldRenameTo.trim();
+        }
     }
 
     // --------------------
@@ -77,20 +90,21 @@ public class Processor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(BundleBuilder.class)) {
+        Set<? extends Element> classesLinkedToActivities=roundEnv.getElementsAnnotatedWith(LinkToBundleBuilder.class);
+        for (Element activityClass : roundEnv.getElementsAnnotatedWith(BundleBuilder.class)) {
             // Make sure element is a field or a method declaration
-            if (!annotatedElement.getKind().isClass()) {
-                logError(annotatedElement, "Only classes can be annotated with @%s", BundleBuilder.class.getSimpleName());
+            if (!activityClass.getKind().isClass()) {
+                logError(activityClass, "Only classes can be annotated with @%s", BundleBuilder.class.getSimpleName());
                 return true;
             }
 
             try {
-                TypeSpec builderSpec = getBuilderSpec(annotatedElement);
-                JavaFile builderFile = JavaFile.builder(Util.getPackageName(annotatedElement), builderSpec).build();
+                TypeSpec builderSpec = getBuilderSpec(activityClass, classesLinkedToActivities);
+                JavaFile builderFile = JavaFile.builder(Util.getPackageName(activityClass), builderSpec).build();
                 builderFile.writeTo(filer);
             } catch (Exception e) {
                 messager.printMessage(Diagnostic.Kind.ERROR, e.toString());
-                logError(annotatedElement, "Could not create BundleArgs builder class for %s: (Exception: %s)", annotatedElement.getSimpleName(), e.getMessage());
+                logError(activityClass, "Could not create BundleArgs builder class for %s: (Exception: %s)", activityClass.getSimpleName(), e.getMessage());
             }
         }
         return true;
@@ -100,7 +114,7 @@ public class Processor extends AbstractProcessor {
     // Processor implementation
     // --------------------
 
-    private TypeSpec getBuilderSpec(Element annotatedElement) {
+    private TypeSpec getBuilderSpec(Element annotatedElement, Set<? extends Element> classesLinkedToActivities) {
         List<ArgElement> required = new ArrayList<>();
         List<ArgElement> optional = new ArrayList<>();
         List<ArgElement> all = new ArrayList<>();
@@ -108,6 +122,8 @@ public class Processor extends AbstractProcessor {
         getAnnotatedFields(annotatedElement, required, optional);
         all.addAll(required);
         all.addAll(optional);
+
+        List<ActivityToAnotherClassLink> activityLinks=getActivityLinks(annotatedElement, classesLinkedToActivities);
 
         // 1) create class
         final String name = Util.getBundleBuilderName(annotatedElement);
@@ -133,7 +149,7 @@ public class Processor extends AbstractProcessor {
         addBuildBundleFunction(annotatedElement, builder, all);
 
         // 7) add inject method to read all fields into an annotated class
-        addInjectFunction(annotatedElement, builder, all);
+        addInjectFunction(annotatedElement, builder, all, activityLinks);
 
         // 8) add getter functions for each fields
         addGetters(annotatedElement, builder, all);
@@ -292,7 +308,7 @@ public class Processor extends AbstractProcessor {
         builder.addMethod(buildMethod.build());
     }
 
-    private void addInjectFunction(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all) {
+    private void addInjectFunction(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all, List<ActivityToAnotherClassLink> links) {
         MethodSpec.Builder injectMethod = MethodSpec.methodBuilder("inject")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(Bundle.class, "args")
@@ -301,6 +317,9 @@ public class Processor extends AbstractProcessor {
         for (ArgElement e : all) {
             e.addFieldToInjection(injectMethod);
         }
+
+        for (ActivityToAnotherClassLink link : links)
+            injectMethod.addCode("\n"+link.toString());
 
         builder.addMethod(injectMethod.build());
     }
@@ -323,7 +342,92 @@ public class Processor extends AbstractProcessor {
         messager.printMessage(Diagnostic.Kind.ERROR, String.format(msg, args), e);
     }
 
-    private void getAnnotatedFields(Element annotatedElement, List<ArgElement> required, List<ArgElement> optional) {
+    private List<ActivityToAnotherClassLink> getActivityLinks(Element activityElement, Set<? extends Element> classesLinkedToActivities)
+    {
+        List<ActivityToAnotherClassLink> links=new LinkedList<>();
+
+        for (Element activityField : activityElement.getEnclosedElements())
+        {
+            TypeMirror activityFieldClass=null;
+
+            if (activityField.getKind()==ElementKind.METHOD)
+            {
+                ExecutableElement activityGetter=(ExecutableElement)activityField;
+                Element returnTypeElement=Processor.instance.typeUtils.asElement(activityGetter.getReturnType());
+                if (returnTypeElement!=null)
+                    activityFieldClass=returnTypeElement.asType();
+            }
+            else if (activityField.getKind()==ElementKind.FIELD)
+            {
+                activityFieldClass=activityField.asType();
+            }
+
+            if (activityFieldClass!=null)
+            {
+                for (Element classLinkedToActivity : classesLinkedToActivities)
+                {
+                    if (classLinkedToActivity.asType().equals(activityFieldClass))
+                    {
+                        getActivityLinksFromActivityField(activityField, activityFieldClass, links);
+                    }
+                }
+            }
+        }
+
+        if (activityFieldRenameTask!=null)
+            for (ActivityToAnotherClassLink link : links)
+                activityFieldRenameTask.apply(link);
+
+        //prefer getters instead of fields
+        List<ActivityToAnotherClassLink> toDelete=new LinkedList<>();
+        for (ActivityToAnotherClassLink link : links)
+            if (link.linkElement.getKind()==ElementKind.FIELD)
+                if (fieldHasGetter(links, link.linkElement))
+                    toDelete.add(link);
+
+        if (!toDelete.isEmpty())
+            links.removeAll(toDelete);
+
+        return links;
+    }
+
+    private boolean fieldHasGetter(List<ActivityToAnotherClassLink> links, Element element)
+    {
+        String fieldName=element.getSimpleName().toString().toLowerCase();
+        String[] possibleGetterNames=new String[]
+        {
+            fieldName,
+            "get"+fieldName,
+            "is"+fieldName
+        };
+
+        for (ActivityToAnotherClassLink link : links)
+            if (link.linkElement!=element)
+                if (link.linkElement.getKind()==ElementKind.METHOD)
+                    for (String possibleGetterName : possibleGetterNames)
+                        if (link.linkElement.getSimpleName().toString().toLowerCase().equals(possibleGetterName))
+                            return true;
+
+        return false;
+    }
+
+    private void getActivityLinksFromActivityField(Element activityField, TypeMirror activityFieldClass,
+                                                   List<ActivityToAnotherClassLink> links)
+    {
+        for (Element element : Processor.instance.typeUtils.asElement(activityFieldClass).getEnclosedElements())
+        {
+            if (element.getAnnotation(Arg.class)!=null)
+            {
+                ActivityToAnotherClassLink link=new ActivityToAnotherClassLink();
+                link.fieldName=element.getSimpleName().toString();
+                link.linkElement=activityField;
+                links.add(link);
+            }
+        }
+    }
+
+    private void getAnnotatedFields(Element annotatedElement, List<ArgElement> required, List<ArgElement> optional)
+    {
         for (Element e : annotatedElement.getEnclosedElements()) {
             if (e.getAnnotation(Arg.class) != null) {
                 ArgElement ae = new ArgElement(e);
@@ -335,11 +439,27 @@ public class Processor extends AbstractProcessor {
             }
         }
 
+        Element superClass=getSuperClassElement(annotatedElement);
+        if (superClass!=null) {
+            getAnnotatedFields(superClass, required, optional);
+        }
+    }
+
+    private Element getSuperClassElement(Element annotatedElement)
+    {
         List<? extends TypeMirror> superTypes = Processor.instance.typeUtils.directSupertypes(annotatedElement.asType());
         TypeMirror superClassType = superTypes.size() > 0 ? superTypes.get(0) : null;
         Element superClass = superClassType == null ? null : Processor.instance.typeUtils.asElement(superClassType);
-        if (superClass != null && superClass.getKind() == ElementKind.CLASS) {
-            getAnnotatedFields(superClass, required, optional);
+        if (superClass != null && superClass.getKind() == ElementKind.CLASS)
+        {
+            String superClassNameWithPackage=superClass.asType().toString();
+            if (superClassNameWithPackage.startsWith("java.")||
+                superClassNameWithPackage.startsWith("android.")||
+                superClassNameWithPackage.startsWith("androidx."))
+                return null;
+            return superClass;
         }
+
+        return null;
     }
 }

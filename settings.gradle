@@ -1,4 +1,2 @@
-//include ':sample'
-
-//include ':bundleargs-annotation'
+include ':bundleargs-annotation'
 include ':bundleargs-processor'
