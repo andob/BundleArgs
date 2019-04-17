@@ -53,6 +53,8 @@ public class Processor extends AbstractProcessor {
 
     public ActivityFieldRenameTask activityFieldRenameTask;
 
+    public int activityLinksInheritanceSearchDepth = 2;
+
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return new HashSet<String>() {{
@@ -82,6 +84,13 @@ public class Processor extends AbstractProcessor {
             activityFieldRenameTask.from=activityFieldRenameFrom.trim();
             activityFieldRenameTask.to=activityFieldRenameTo.trim();
         }
+
+        try
+        {
+            String argument=processingEnv.getOptions().get("BundleBuilderActivityLinksSearchInheritanceDepth");
+            activityLinksInheritanceSearchDepth=Math.max(2, Integer.parseInt(argument));
+        }
+        catch (Exception ex) {}
     }
 
     // --------------------
@@ -344,6 +353,7 @@ public class Processor extends AbstractProcessor {
 
     private List<ActivityToAnotherClassLink> getActivityLinks(Element activityElement, Set<? extends Element> classesLinkedToActivities)
     {
+        //find links
         List<ActivityToAnotherClassLink> links=new LinkedList<>();
 
         for (Element activityField : activityElement.getEnclosedElements())
@@ -368,12 +378,13 @@ public class Processor extends AbstractProcessor {
                 {
                     if (classLinkedToActivity.asType().equals(activityFieldClass))
                     {
-                        getActivityLinksFromActivityField(activityField, activityFieldClass, links);
+                        getLinksFromActivityFieldAndLinkedClass(activityField, classLinkedToActivity, links);
                     }
                 }
             }
         }
 
+        //rename fields
         if (activityFieldRenameTask!=null)
             for (ActivityToAnotherClassLink link : links)
                 activityFieldRenameTask.apply(link);
@@ -411,18 +422,29 @@ public class Processor extends AbstractProcessor {
         return false;
     }
 
-    private void getActivityLinksFromActivityField(Element activityField, TypeMirror activityFieldClass,
-                                                   List<ActivityToAnotherClassLink> links)
+    private void getLinksFromActivityFieldAndLinkedClass(Element activityField, Element linkedClass, List<ActivityToAnotherClassLink> links)
     {
-        for (Element element : Processor.instance.typeUtils.asElement(activityFieldClass).getEnclosedElements())
+        getLinksFromActivityFieldAndLinkedClass(activityField, linkedClass, links, 0);
+    }
+
+    private void getLinksFromActivityFieldAndLinkedClass(Element activityField, Element linkedClass, List<ActivityToAnotherClassLink> links, int iteration)
+    {
+        if (iteration<activityLinksInheritanceSearchDepth)
         {
-            if (element.getAnnotation(Arg.class)!=null)
+            for (Element element : linkedClass.getEnclosedElements())
             {
-                ActivityToAnotherClassLink link=new ActivityToAnotherClassLink();
-                link.fieldName=element.getSimpleName().toString();
-                link.linkElement=activityField;
-                links.add(link);
+                if (element.getAnnotation(Arg.class)!=null)
+                {
+                    ActivityToAnotherClassLink link=new ActivityToAnotherClassLink();
+                    link.fieldName=element.getSimpleName().toString();
+                    link.linkElement=activityField;
+                    links.add(link);
+                }
             }
+
+            Element superClass=getSuperClassElement(linkedClass);
+            if (superClass!=null)
+                getLinksFromActivityFieldAndLinkedClass(activityField, superClass, links, iteration+1);
         }
     }
 
@@ -440,9 +462,8 @@ public class Processor extends AbstractProcessor {
         }
 
         Element superClass=getSuperClassElement(annotatedElement);
-        if (superClass!=null) {
+        if (superClass!=null)
             getAnnotatedFields(superClass, required, optional);
-        }
     }
 
     private Element getSuperClassElement(Element annotatedElement)

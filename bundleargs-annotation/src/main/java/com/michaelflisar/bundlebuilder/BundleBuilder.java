@@ -1,16 +1,17 @@
 package com.michaelflisar.bundlebuilder;
 
-import android.os.Bundle;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import java.lang.reflect.Method;
-
-public class BundleBuilder
+@Target(ElementType.TYPE) @Retention(RetentionPolicy.CLASS)
+public @interface BundleBuilder
 {
-    public static void bind(Object target, Bundle bundle) throws Exception
-    {
-        Class<?> targetClass = target.getClass();
-        Class<?> builderClass = targetClass.getClassLoader().loadClass(targetClass + "BundleBuilder");
-        Method injectMethod=builderClass.getDeclaredMethod("inject", Bundle.class, targetClass);
-        injectMethod.invoke(null, bundle, target);
-    }
+    boolean useConstructorForMandatoryArgs() default false;
+    String setterPrefix() default "";
+    boolean generateIntentBuilder() default false;
+    boolean generateGetters() default false;
+    boolean isKotlinClass() default false;
+    boolean generatePersist() default false;
 }
