@@ -51,10 +51,6 @@ public class Processor extends AbstractProcessor {
     public Filer filer;
     public Messager messager;
 
-    public ActivityFieldRenameTask activityFieldRenameTask;
-
-    public int activityLinksInheritanceSearchDepth = 2;
-
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return new HashSet<String>() {{
@@ -75,22 +71,6 @@ public class Processor extends AbstractProcessor {
         elementUtils = processingEnv.getElementUtils();
         filer = processingEnv.getFiler();
         messager = processingEnv.getMessager();
-
-        String activityFieldRenameFrom=processingEnv.getOptions().get("BundleBuilderActivityFieldRenameFrom");
-        String activityFieldRenameTo=processingEnv.getOptions().get("BundleBuilderActivityFieldRenameTo");
-        if (activityFieldRenameFrom!=null&&activityFieldRenameTo!=null)
-        {
-            activityFieldRenameTask =new ActivityFieldRenameTask();
-            activityFieldRenameTask.from=activityFieldRenameFrom.trim();
-            activityFieldRenameTask.to=activityFieldRenameTo.trim();
-        }
-
-        try
-        {
-            String argument=processingEnv.getOptions().get("BundleBuilderActivityLinksSearchInheritanceDepth");
-            activityLinksInheritanceSearchDepth=Math.max(2, Integer.parseInt(argument));
-        }
-        catch (Exception ex) {}
     }
 
     // --------------------
@@ -99,7 +79,6 @@ public class Processor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        Set<? extends Element> classesLinkedToActivities=roundEnv.getElementsAnnotatedWith(LinkToBundleBuilder.class);
         for (Element activityClass : roundEnv.getElementsAnnotatedWith(BundleBuilder.class)) {
             // Make sure element is a field or a method declaration
             if (!activityClass.getKind().isClass()) {
@@ -108,7 +87,7 @@ public class Processor extends AbstractProcessor {
             }
 
             try {
-                TypeSpec builderSpec = getBuilderSpec(activityClass, classesLinkedToActivities);
+                TypeSpec builderSpec = getBuilderSpec(activityClass);
                 JavaFile builderFile = JavaFile.builder(Util.getPackageName(activityClass), builderSpec).build();
                 builderFile.writeTo(filer);
             } catch (Exception e) {
@@ -123,7 +102,7 @@ public class Processor extends AbstractProcessor {
     // Processor implementation
     // --------------------
 
-    private TypeSpec getBuilderSpec(Element annotatedElement, Set<? extends Element> classesLinkedToActivities) {
+    private TypeSpec getBuilderSpec(Element annotatedElement) {
         List<ArgElement> required = new ArrayList<>();
         List<ArgElement> optional = new ArrayList<>();
         List<ArgElement> all = new ArrayList<>();
@@ -131,8 +110,6 @@ public class Processor extends AbstractProcessor {
         getAnnotatedFields(annotatedElement, required, optional);
         all.addAll(required);
         all.addAll(optional);
-
-        List<ActivityToAnotherClassLink> activityLinks=getActivityLinks(annotatedElement, classesLinkedToActivities);
 
         // 1) create class
         final String name = Util.getBundleBuilderName(annotatedElement);
@@ -158,7 +135,7 @@ public class Processor extends AbstractProcessor {
         addBuildBundleFunction(annotatedElement, builder, all);
 
         // 7) add inject method to read all fields into an annotated class
-        addInjectFunction(annotatedElement, builder, all, activityLinks);
+        addInjectFunction(annotatedElement, builder, all);
 
         // 8) add getter functions for each fields
         addGetters(annotatedElement, builder, all);
@@ -317,7 +294,7 @@ public class Processor extends AbstractProcessor {
         builder.addMethod(buildMethod.build());
     }
 
-    private void addInjectFunction(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all, List<ActivityToAnotherClassLink> links) {
+    private void addInjectFunction(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all) {
         MethodSpec.Builder injectMethod = MethodSpec.methodBuilder("inject")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(Bundle.class, "args")
@@ -326,9 +303,6 @@ public class Processor extends AbstractProcessor {
         for (ArgElement e : all) {
             e.addFieldToInjection(injectMethod);
         }
-
-        for (ActivityToAnotherClassLink link : links)
-            injectMethod.addCode("\n"+link.toString());
 
         builder.addMethod(injectMethod.build());
     }
@@ -349,103 +323,6 @@ public class Processor extends AbstractProcessor {
 
     private void logError(Element e, String msg, Object... args) {
         messager.printMessage(Diagnostic.Kind.ERROR, String.format(msg, args), e);
-    }
-
-    private List<ActivityToAnotherClassLink> getActivityLinks(Element activityElement, Set<? extends Element> classesLinkedToActivities)
-    {
-        //find links
-        List<ActivityToAnotherClassLink> links=new LinkedList<>();
-
-        for (Element activityField : activityElement.getEnclosedElements())
-        {
-            TypeMirror activityFieldClass=null;
-
-            if (activityField.getKind()==ElementKind.METHOD)
-            {
-                ExecutableElement activityGetter=(ExecutableElement)activityField;
-                Element returnTypeElement=Processor.instance.typeUtils.asElement(activityGetter.getReturnType());
-                if (returnTypeElement!=null)
-                    activityFieldClass=returnTypeElement.asType();
-            }
-            else if (activityField.getKind()==ElementKind.FIELD)
-            {
-                activityFieldClass=activityField.asType();
-            }
-
-            if (activityFieldClass!=null)
-            {
-                for (Element classLinkedToActivity : classesLinkedToActivities)
-                {
-                    if (classLinkedToActivity.asType().equals(activityFieldClass))
-                    {
-                        getLinksFromActivityFieldAndLinkedClass(activityField, classLinkedToActivity, links);
-                    }
-                }
-            }
-        }
-
-        //rename fields
-        if (activityFieldRenameTask!=null)
-            for (ActivityToAnotherClassLink link : links)
-                activityFieldRenameTask.apply(link);
-
-        //prefer getters instead of fields
-        List<ActivityToAnotherClassLink> toDelete=new LinkedList<>();
-        for (ActivityToAnotherClassLink link : links)
-            if (link.linkElement.getKind()==ElementKind.FIELD)
-                if (fieldHasGetter(links, link.linkElement))
-                    toDelete.add(link);
-
-        if (!toDelete.isEmpty())
-            links.removeAll(toDelete);
-
-        return links;
-    }
-
-    private boolean fieldHasGetter(List<ActivityToAnotherClassLink> links, Element element)
-    {
-        String fieldName=element.getSimpleName().toString().toLowerCase();
-        String[] possibleGetterNames=new String[]
-        {
-            fieldName,
-            "get"+fieldName,
-            "is"+fieldName
-        };
-
-        for (ActivityToAnotherClassLink link : links)
-            if (link.linkElement!=element)
-                if (link.linkElement.getKind()==ElementKind.METHOD)
-                    for (String possibleGetterName : possibleGetterNames)
-                        if (link.linkElement.getSimpleName().toString().toLowerCase().equals(possibleGetterName))
-                            return true;
-
-        return false;
-    }
-
-    private void getLinksFromActivityFieldAndLinkedClass(Element activityField, Element linkedClass, List<ActivityToAnotherClassLink> links)
-    {
-        getLinksFromActivityFieldAndLinkedClass(activityField, linkedClass, links, 0);
-    }
-
-    private void getLinksFromActivityFieldAndLinkedClass(Element activityField, Element linkedClass, List<ActivityToAnotherClassLink> links, int iteration)
-    {
-        if (iteration<activityLinksInheritanceSearchDepth)
-        {
-            for (Element element : linkedClass.getEnclosedElements())
-            {
-                if (element.getAnnotation(Arg.class)!=null)
-                {
-                    ActivityToAnotherClassLink link=new ActivityToAnotherClassLink();
-                    link.fieldName=element.getSimpleName().toString();
-                    link.linkElement=activityField;
-                    links.add(link);
-                }
-            }
-
-            Element superClass=getSuperClassElement(linkedClass);
-            if (superClass!=null)
-                getLinksFromActivityFieldAndLinkedClass(activityField, superClass, links, iteration+1);
-        }
     }
 
     private void getAnnotatedFields(Element annotatedElement, List<ArgElement> required, List<ArgElement> optional)
