@@ -1,4 +1,4 @@
-# BundleArgs [![Release](https://jitpack.io/v/MFlisar/BundleArgs.svg)](https://jitpack.io/#MFlisar/BundleArgs) [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-BundleArgs-brightgreen.svg?style=flat)](https://android-arsenal.com/details/1/5289) ![Method count](https://img.shields.io/badge/Method%20count-4%20methods%20(6%20fields)-brightgreen.svg)
+# BundleArgs
 
 Let your IDE create your bundles/intents for you. This library is:
 * **reflection free**
@@ -9,19 +9,19 @@ Let your IDE create your bundles/intents for you. This library is:
 * **support save/restore** to save changes of the arguments in an `Activities` `onSaveInstanceState` function and restore them again from the `savedInstanceState` if desired
 * creates nice helper functions if appropriate
  
-### How to add it to your project - Gradle (via [JitPack.io](https://jitpack.io/))
+### How to add it to your project - Gradle
 
-1) add jitpack to your project's `build.gradle`:
+1) add to your project's `build.gradle`:
 ```
 repositories {
-    maven { url "https://jitpack.io" }
+    maven { url "http://www.andob.info" }
 }
 ```
 2) add the compile statement to your module's `build.gradle` and apply the apt plugin:
 ```
 dependencies {
-    compile 'com.github.MFlisar.BundleArgs:bundleargs-annotation:1.6'
-    annotationProcessor 'com.github.MFlisar.BundleArgs:bundleargs-processor:1.6'
+    implementation 'ro.andob.bundleargs:bundleargs-annotation:2.0.3'
+    annotationProcessor 'ro.andob.bundleargs:bundleargs-processor:2.0.3'
 }
 ```
 
@@ -172,10 +172,3 @@ This project is generally based on https://github.com/emilsjolander/IntentBuilde
 
 * conductor/fragment/class demo?
 * ???
-
-### Mods
-
-```
-implementation 'com.github.MFlisar.BundleArgs:bundleargs-annotation:1.6'
-kapt 'com.github.andob:BundleArgs:1.8'
-```

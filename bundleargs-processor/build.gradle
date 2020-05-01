@@ -1,7 +1,5 @@
 apply plugin: 'java'
-apply plugin: 'maven'
-
-group = 'com.github.MFlisar'
+apply plugin: 'maven-publish'
 
 jar {
     from {
@@ -26,7 +24,17 @@ jar {
 }
 
 dependencies {
-    compile 'com.squareup:javapoet:1.11.0'
-    compile 'com.google.android:android:4.1.1.4'
-    compile 'com.google.android:support-v4:r7'
+    implementation 'com.squareup:javapoet:1.12.1'
+    implementation 'com.google.android:android:4.1.1.4'
+    implementation 'com.google.android:support-v4:r7'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId 'ro.andob.bundleargs'
+            artifactId 'bundleargs-processor'
+            version '2.0.3'
+        }
+    }
 }

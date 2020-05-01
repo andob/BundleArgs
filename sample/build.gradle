@@ -27,10 +27,4 @@ dependencies {
 
     implementation "androidx.legacy:legacy-support-core-ui:1.0.0"
     implementation "androidx.appcompat:appcompat:1.0.0"
-
-    annotationProcessor project(':bundleargs-processor')
-    implementation 'com.github.MFlisar.BundleArgs:bundleargs-annotation:1.6'
-
-//    annotationProcessor 'com.github.MFlisar.BundleArgs:bundleargs-processor:-SNAPSHOT'
-//    compile 'com.github.MFlisar.BundleArgs:bundleargs-annotation:-SNAPSHOT'
 }
