@@ -31,10 +31,19 @@ dependencies {
 
 publishing {
     publications {
+        repositories.maven {
+            url 'http://maven.andob.info/repository/open_source/'
+            credentials {
+                username "$System.env.MAVEN_PUBLISH_USERNAME"
+                password "$System.env.MAVEN_PUBLISH_PASSWORD"
+            }
+        }
+
         maven(MavenPublication) {
             groupId 'ro.andob.bundleargs'
             artifactId 'bundleargs-processor'
-            version '2.0.3'
+            version '2.0.7'
+            from components.java
         }
     }
 }

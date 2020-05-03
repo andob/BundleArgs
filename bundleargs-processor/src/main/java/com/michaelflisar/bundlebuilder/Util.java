@@ -1,11 +1,11 @@
 package com.michaelflisar.bundlebuilder;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.os.Bundle;
 import android.os.Parcelable;
 
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeName;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -103,6 +103,25 @@ public class Util {
         put(char.class.getName(), "CharSequenceArrayList");
         put(Character.class.getName(), "CharSequenceArrayList");
     }};
+
+    public static TypeName getFragmentTypeName(Elements elementUtils)
+    {
+        String[] typeNames=new String[]
+        {
+            "androidx.fragment.app.Fragment",
+            "android.support.v4.app.Fragment",
+            "android.app.Fragment"
+        };
+
+        for (String typeName : typeNames)
+        {
+            TypeElement fragmentTypeElement=elementUtils.getTypeElement(typeName);
+            if (fragmentTypeElement!=null)
+                return TypeName.get(fragmentTypeElement.asType());
+        }
+
+        throw new RuntimeException("Cannot find fragment type!!!");
+    }
 
     public static String getBundleFunctionName(Elements elementUtils, Types typeUtils, Messager messager, TypeMirror typeMirror) {
         String functionName = getArrayBundleFunctionName(elementUtils, typeUtils, messager, typeMirror);
@@ -210,11 +229,14 @@ public class Util {
     }
 
     public static boolean checkIsOrExtendsFragment(Elements elementUtils, Types typeUtil, Element element) {
-        TypeMirror fragment = elementUtils.getTypeElement(Fragment.class.getName()).asType();
-        TypeMirror supportFragment = elementUtils.getTypeElement(android.support.v4.app.Fragment.class.getName()).asType();
-        if (typeUtil.isAssignable(element.asType(), fragment) || typeUtil.isAssignable(element.asType(), supportFragment)) {
+        TypeElement supportFragment = elementUtils.getTypeElement("androidx.fragment.app.Fragment");
+        if (supportFragment!=null&&typeUtil.isAssignable(element.asType(), supportFragment.asType()))
             return true;
-        }
+
+        TypeElement supportFragmentLegacy = elementUtils.getTypeElement("android.support.v4.app.Fragment");
+        if (supportFragmentLegacy!=null&&typeUtil.isAssignable(element.asType(), supportFragmentLegacy.asType()))
+            return true;
+
         return false;
     }
 

@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.util.Pair;
 
 import com.squareup.javapoet.ClassName;
@@ -18,7 +17,6 @@ import com.squareup.javapoet.TypeSpec;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -30,7 +28,6 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -235,19 +232,10 @@ public class Processor extends AbstractProcessor {
 
             buildMethod = MethodSpec.methodBuilder("startActivityForResult")
                     .addModifiers(Modifier.PUBLIC)
-                    .addParameter(Fragment.class, "fragment")
+                    .addParameter(Util.getFragmentTypeName(elementUtils), "fragment")
                     .addParameter(int.class, "requestCode")
                     .addStatement("$T intent = $L", Intent.class, "buildIntent(fragment.getContext())")
                     .addStatement("fragment.startActivityForResult(intent, requestCode)");
-            builder.addMethod(buildMethod.build());
-
-            buildMethod = MethodSpec.methodBuilder("startActivityForResult")
-                    .addModifiers(Modifier.PUBLIC)
-                    .addParameter(android.app.Fragment.class, "fragment")
-                    .addParameter(int.class, "requestCode")
-                    .addStatement("$T intent = $L", Intent.class, "buildIntent(fragment.getContext())")
-                    .addStatement("fragment.startActivityForResult(intent, requestCode)");
-
             builder.addMethod(buildMethod.build());
         }
     }
