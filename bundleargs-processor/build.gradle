@@ -1,6 +1,11 @@
 apply plugin: 'java'
 apply plugin: 'maven-publish'
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 jar {
     from {
         configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
@@ -42,7 +47,7 @@ publishing {
         maven(MavenPublication) {
             groupId 'ro.andob.bundleargs'
             artifactId 'bundleargs-processor'
-            version '2.0.7'
+            version '2.0.9'
             from components.java
         }
     }

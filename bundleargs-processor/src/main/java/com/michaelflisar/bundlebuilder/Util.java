@@ -104,25 +104,6 @@ public class Util {
         put(Character.class.getName(), "CharSequenceArrayList");
     }};
 
-    public static TypeName getFragmentTypeName(Elements elementUtils)
-    {
-        String[] typeNames=new String[]
-        {
-            "androidx.fragment.app.Fragment",
-            "android.support.v4.app.Fragment",
-            "android.app.Fragment"
-        };
-
-        for (String typeName : typeNames)
-        {
-            TypeElement fragmentTypeElement=elementUtils.getTypeElement(typeName);
-            if (fragmentTypeElement!=null)
-                return TypeName.get(fragmentTypeElement.asType());
-        }
-
-        throw new RuntimeException("Cannot find fragment type!!!");
-    }
-
     public static String getBundleFunctionName(Elements elementUtils, Types typeUtils, Messager messager, TypeMirror typeMirror) {
         String functionName = getArrayBundleFunctionName(elementUtils, typeUtils, messager, typeMirror);
         if (functionName == null) {

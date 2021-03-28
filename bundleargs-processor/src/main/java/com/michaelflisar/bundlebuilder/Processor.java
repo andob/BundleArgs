@@ -229,14 +229,6 @@ public class Processor extends AbstractProcessor {
                     .addStatement("$T intent = $L", Intent.class, "buildIntent(activity)")
                     .addStatement("activity.startActivityForResult(intent, requestCode)");
             builder.addMethod(buildMethod.build());
-
-            buildMethod = MethodSpec.methodBuilder("startActivityForResult")
-                    .addModifiers(Modifier.PUBLIC)
-                    .addParameter(Util.getFragmentTypeName(elementUtils), "fragment")
-                    .addParameter(int.class, "requestCode")
-                    .addStatement("$T intent = $L", Intent.class, "buildIntent(fragment.getContext())")
-                    .addStatement("fragment.startActivityForResult(intent, requestCode)");
-            builder.addMethod(buildMethod.build());
         }
     }
 

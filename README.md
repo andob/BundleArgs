@@ -20,8 +20,8 @@ repositories {
 2) add the compile statement to your module's `build.gradle` and apply the apt plugin:
 ```
 dependencies {
-    implementation 'ro.andob.bundleargs:bundleargs-annotation:2.0.7'
-    annotationProcessor 'ro.andob.bundleargs:bundleargs-processor:2.0.7'
+    implementation 'ro.andob.bundleargs:bundleargs-annotation:2.0.9'
+    annotationProcessor 'ro.andob.bundleargs:bundleargs-processor:2.0.9'
 }
 ```
 
