@@ -3,14 +3,10 @@ package com.michaelflisar.bundlebuilder;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Parcelable;
-
 import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeName;
-
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
-
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
