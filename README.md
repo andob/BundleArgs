@@ -14,7 +14,7 @@ Let your IDE create your bundles/intents for you. This library is:
 1) add to your project's `build.gradle`:
 ```
 repositories {
-    maven { url "http://maven.andob.info/repository/open_source" }
+    maven { url "https://maven.andob.info/repository/open_source" }
 }
 ```
 2) add the compile statement to your module's `build.gradle` and apply the apt plugin:
