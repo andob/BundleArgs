@@ -1,5 +1,5 @@
 apply plugin: 'com.android.library'
-apply plugin: 'digital.wup.android-maven-publish'
+apply plugin: 'maven-publish'
 
 android {
     if (project.hasProperty('setup.compileSdk'))
@@ -26,22 +26,22 @@ android {
     }
 }
 
-publishing {
-    publications {
-        repositories.maven {
-            url 'https://maven.andob.info/repository/open_source/'
-            credentials {
-                username "$System.env.MAVEN_PUBLISH_USERNAME"
-                password "$System.env.MAVEN_PUBLISH_PASSWORD"
+project.afterEvaluate {
+    publishing {
+        publications {
+            repositories.maven {
+                url 'https://maven.andob.info/repository/open_source/'
+                credentials {
+                    username "$System.env.MAVEN_PUBLISH_USERNAME"
+                    password "$System.env.MAVEN_PUBLISH_PASSWORD"
+                }
             }
-        }
 
-        android.libraryVariants.all { variant ->
-            "maven${variant.name.capitalize()}Aar"(MavenPublication) {
-                from components.findByName("android${variant.name.capitalize()}")
+            maven(MavenPublication) {
                 groupId 'ro.andob.bundleargs'
                 artifactId 'bundleargs-annotation'
                 version '2.1.0'
+                artifact(bundleReleaseAar)
             }
         }
     }

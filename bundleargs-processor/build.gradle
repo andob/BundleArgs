@@ -29,7 +29,7 @@ jar {
 }
 
 dependencies {
-    implementation 'com.squareup:javapoet:1.12.1'
+    implementation 'com.squareup:javapoet:1.13.0'
     implementation 'com.google.android:android:4.1.1.4'
     implementation 'com.google.android:support-v4:r7'
 }
