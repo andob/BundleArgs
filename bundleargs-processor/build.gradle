@@ -31,7 +31,6 @@ jar {
 dependencies {
     implementation 'com.squareup:javapoet:1.13.0'
     implementation 'com.google.android:android:4.1.1.4'
-    implementation 'com.google.android:support-v4:r7'
 }
 
 publishing {
@@ -47,7 +46,7 @@ publishing {
         maven(MavenPublication) {
             groupId 'ro.andob.bundleargs'
             artifactId 'bundleargs-processor'
-            version '2.1.0'
+            version '2.1.1'
             from components.java
         }
     }

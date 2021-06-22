@@ -108,12 +108,13 @@ public class ArgElement {
             }
 
             buildMethod
-                    .addCode("try" +
-                            "\n{" +
-                                "\n\tif ("+Util.FIELD_HASH_MAP_NAME+".get(\""+mParamName+"\").first)"+
-                                    "\n\t\tbundle.put"+bundleFunctionName+"(\""+mParamName+"\", ("+mType+")"+Util.FIELD_HASH_MAP_NAME+".get(\""+mParamName+"\").second);"+
-                            "\n}" +
-                            "\ncatch (Exception ex) {}");
+                    .addCode("\ntry" +
+                             "\n{" +
+                             "\n\tif ("+Util.FIELD_HASH_MAP_NAME+".get(\""+mParamName+"\").first)"+
+                             "\n\t\tbundle.put"+bundleFunctionName+"(\""+mParamName+"\", ("+mType+")"+Util.FIELD_HASH_MAP_NAME+".get(\""+mParamName+"\").second);"+
+                             "\n}" +
+                             "\ncatch (Exception ex) {}" +
+                             "\n\n");
         } else {
             messager.printMessage(Diagnostic.Kind.ERROR, String.format("Field type \"%s\" not supported!", mType.toString()));
         }
