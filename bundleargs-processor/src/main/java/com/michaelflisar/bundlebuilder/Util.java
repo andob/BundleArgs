@@ -207,14 +207,7 @@ public class Util {
 
     public static boolean checkIsOrExtendsFragment(Elements elementUtils, Types typeUtil, Element element) {
         TypeElement supportFragment = elementUtils.getTypeElement("androidx.fragment.app.Fragment");
-        if (supportFragment!=null&&typeUtil.isAssignable(element.asType(), supportFragment.asType()))
-            return true;
-
-        TypeElement supportFragmentLegacy = elementUtils.getTypeElement("android.support.v4.app.Fragment");
-        if (supportFragmentLegacy!=null&&typeUtil.isAssignable(element.asType(), supportFragmentLegacy.asType()))
-            return true;
-
-        return false;
+        return supportFragment != null && typeUtil.isAssignable(element.asType(), supportFragment.asType());
     }
 
     public static String getPackageName(Element e) {
