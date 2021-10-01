@@ -8,18 +8,18 @@ Annotation processor to generate type-safe strongly-typed Builder classes around
 @BundleBuilder
 public class MyActivity extends AppCompatActivity
 {
-	@Arg
-	String someStringArgument;
-	
     @Arg
-	int someIntArgument;
-
-	@Override
-	public void onCreate(Bundle savedInstanceState)
-	{
-		super.onCreate(savedInstanceState);
-		BundleArgs.inject(getIntent().getExtras(), this); //you can move this into BaseActivity
-	}
+    String someStringArgument;
+    
+    @Arg
+    int someIntArgument;
+    
+    @Override
+    public void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        BundleArgs.inject(getIntent().getExtras(), this); //you can move this into BaseActivity
+    }
 }
 ```
 
@@ -27,20 +27,20 @@ public class MyActivity extends AppCompatActivity
 @BundleBuilder
 public class MyFragment extends Fragment
 {
-	@Arg(optional=true) //you can mark arguments as optional, by default all arguments are mandatory
-	SomeModel someSerializableArgument; //you can pass serializable POJOs
-
-	//on kotlin, you can use it like this:
+    @Arg(optional=true) //you can mark arguments as optional, by default all arguments are mandatory
+    SomeModel someSerializableArgument; //you can pass serializable POJOs
+    
+    //on kotlin, you can use it like this:
     //@Arg(optional=true)
-	//lateinit var someSerializableArgument : SomeModel
-	
+    //lateinit var someSerializableArgument : SomeModel
+    
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
         View view = inflater.inflate(getLayout(), container, false);
-		BundleArgs.inject(getArguments(), this); //you can move this into BaseFragment
+        BundleArgs.inject(getArguments(), this); //you can move this into BaseFragment
         return view;
-	}
+    }
 }
 ```
 
@@ -58,8 +58,8 @@ new MyActivityBundleBuilder()
 
 ```java
 MyFragment fragment = new MyFragmentBundleBuilder()
-    .someSerializableArgument(someObject)
-    .createFragment();
+     .someSerializableArgument(someObject)
+     .createFragment();
 //instead of createFragment, you can also use
 //.build() -> will return a Bundle object
 ```
