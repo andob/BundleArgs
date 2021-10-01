@@ -1,23 +1,83 @@
-# BundleArgs
+## BundleArgs
 
-Let your IDE create your bundles/intents for you. This library is:
-* **reflection free**
-* typesafe
-* fast
-* **very small** - just the annotation interfaces are added to your akp (4 methods, 6 fields)
-* **supports any class**:`Activities`, `Fragments` and any other class => use one processor for all your needs
-* **support save/restore** to save changes of the arguments in an `Activities` `onSaveInstanceState` function and restore them again from the `savedInstanceState` if desired
-* creates nice helper functions if appropriate
- 
-### How to add it to your project - Gradle
+Annotation processor to generate type-safe strongly-typed Builder classes around weakly-typed Intent/Bundle API.
 
-1) add to your project's `build.gradle`:
+### Example
+
+```java
+@BundleBuilder
+public class MyActivity extends AppCompatActivity
+{
+	@Arg
+	String someStringArgument;
+	
+    @Arg
+	int someIntArgument;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		BundleArgs.inject(getIntent().getExtras(), this); //you can move this into BaseActivity
+	}
+}
+```
+
+```java
+@BundleBuilder
+public class MyFragment extends Fragment
+{
+	@Arg(optional=true) //you can mark arguments as optional, by default all arguments are mandatory
+	SomeModel someSerializableArgument; //you can pass serializable POJOs
+
+	//on kotlin, you can use it like this:
+    //@Arg(optional=true)
+	//lateinit var someSerializableArgument : SomeModel
+	
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+    {
+        View view = inflater.inflate(getLayout(), container, false);
+		BundleArgs.inject(getArguments(), this); //you can move this into BaseFragment
+        return view;
+	}
+}
+```
+
+After you hit build, two classes will be generated: ``MyActivityBundleBuilder`` and ``MyFragmentBundleBuilder``:
+
+```java
+new MyActivityBundleBuilder()
+    .someStringArgument("someValue")
+    .someIntArgument(5)
+    .startActivity(context);
+//instead of startActivity, you can also use:
+//.build() -> will return a Bundle object
+//.buildIntent(context) -> will return an Intent object
+```
+
+```java
+MyFragment fragment = new MyFragmentBundleBuilder()
+    .someSerializableArgument(someObject)
+    .createFragment();
+//instead of createFragment, you can also use
+//.build() -> will return a Bundle object
+```
+
+### Why?
+
+- Because plain Intents and Bundles are a pain to work it. So much verbosity to do such an easy task, passing arguments from one object to another.
+- Because by using plain Bundle/Intent API, you loose Java/Kotlin greatest power: TYPE SAFETY.
+- Because some of us work on legacy projects and cannot migrate to Google's Jetpack single-activity, fragment + SafeArgs based navigation architecture.
+
+### Import
+
 ```
 repositories {
     maven { url "https://maven.andob.info/repository/open_source" }
 }
 ```
-2) add the compile statement to your module's `build.gradle` and apply the apt plugin:
+
 ```
 dependencies {
     implementation 'ro.andob.bundleargs:bundleargs-annotation:2.1.4'
@@ -25,150 +85,22 @@ dependencies {
 }
 ```
 
-### Usage - Definitions
+### This is a fork, you can find the original library [here](https://github.com/MFlisar/BundleArgs)
 
-Here's a simple example that demonstrates the use in ANY class that needs a `Bundle` argument:
-
-```
-@BundleBuilder
-public class Test
-{
-    @Arg
-    Long id;
-    @Arg
-    String value;
-    @Arg @Nullable
-    String optionalValue;
-    
-    // define a constructor with Bundle args and the processor will create a build method that directly creates an object of this class
-    public Test(Bundle args)
-    {
-        TestBundleBuilder.inject(args, this);
-    }
-}
-```
-
-And this is how you define it in an activity:
+### License
 
 ```
-@BundleBuilder(
-    generatePersist = true /* if desired, generates a persist method to save current state into a bundle */
-)
-public class MyActivity extends Activity
-{
-	@Arg
-	String stringArg;
+Copyright 2015 Emil Sjölander, 2018-2021 Dobrescu Andrei
 
-	@Override
-	public void onCreate(Bundle savedInstanceState)
-	{
-		super.onCreate(savedInstanceState);
-		MyActivityBundleBuilder.inject(getIntent().getExtras(), this);
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-		// ALTERNATIVELY: if desired, a persist method is generated that must be called in onSaveInstanceState
-		// if this is enabled, following will either read the arguments OR the last values from the savedInstanceState
-		MyActivityBundleBuilder.inject(savedInstanceState != null ? savedInstanceState : getIntent().getExtras(), this);
-	}
-	
-	@Override
-	public void onSaveInstanceState(Bundle outState)
-	{
-		super.onSaveInstanceState(outState);
-		// Optionally: this will save all fields into the state, so that you can inject current values when activity is restored
-		MyActivityBundleBuilder.persist(outState, this);
-	}
-}
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 ```
-
-### Usage - Builder
-
-1) If you have defined the default costructor with a bundle as args in it, you can directly create a class like this:
-
-```
-Test test = new TestBundleBuilder()
-	.id(1L)
-	.value("Test")
-	.optionalValue("optionalValue")
-	.create();
-```
-
-2) You can always just create a `Bundle` with the builder like following:
-
-```
-Bundle bundle = new TestBundleBuilder()
-	.id(1L)
-	.value("Test")
-	.optionalValue("optionalValue")
-	.build();
-```
-
-3) You can always just create an `Intent` with the builder like following (if the annotated class is an `Activity` or if the boolean flag `alwaysAddIntentBuilder` of the `BundleBuilder` is set to true:
-
-```
-Intent intent = new TestBundleBuilder()
-	.id(1L)
-	.value("Test")
-	.optionalValue("optionalValue")
-	.buildIntent(context);
-```
-
-4) If the annotated class extends `Activity`, following method will be added to start the activity directly;
-
-```
-new MyActivityBundleBuilder()
-	.stringArg("Test")
-	.startActivity(context);
-```
-
-5) If the annotated class extends `Fragment` (support, android x or default), following method will be added to create the fragment direclty with arguments already set:
-
-```
-MyFragment fragment = new MyFragmentBundleBuilder()
-	.stringArg("Test")
-	.createFragment();
-```
-
-6) if the enable `useConstructorForMandatoryArgs` in the `@BundleBuilder` annotation, the generated builder will force you to set mandatory fields via the constructor like following:
-
-```
-Bundle b = new TestBundleBuilder(1L, "Test") // you MUST supply mandatory fields
-	.optionalValue("optionalValue") // optional fields can be set via builder functions
-	.build();
-```
-
-### Customisation
-
-**`@BundleBuilder`**
-
-You can define some setup variables like following (each one is optional):
-
-    @BundleBuilder(useConstructorForMandatoryArgs = true, setterPrefix = "with", generateGetters = false, generateIntentBuilder = false)
-    
-* `boolean useConstructorForMandatoryArgs()`:  default: `false`... if true, all mandatory fields will be part of the constructor, otherwise all mandatory fields need to be set with the builder style
-* `String setterPrefix()`:  default `""`... if not empty, all setters for the builder will be prefixed with this String. I.e. the field `customField` will be settable via a function `builder.withCustomField(...)` if the `setterPrefix == "with"`...
-* `boolean generateGetters()`: default: `false`... defines, if the builder offers getter functions for each field to retrieve fields from a bundle directly
-* `boolean generateIntentBuilder()`: default: `false`... defines, if the `buildIntent` method is generated for non activity classes as well
-* `boolean isKotlinClass()`: default: `false`... define if the annotated class is a kotlin class or not
-* `boolean generatePersist()`: default: `false`... define if you want to generate a simply persist method to write all current values to the provided bundle
-
-**`@Arg`**
-
-     @Arg(value = "", optional = false)
-
-* `String name()`: default: `""`... if set, the builder setter will get the custom name instead of the one derived from the field name
-* `boolean optional()`: default: `false`... if true, fields are optional, if not, they must be set via constructor or via setter
-
-<!-- Additional, fields can be annotated with `@Nullable` to define, if the field is allowed to be null or not, the builder will make the corresponding checks if necessary -->
-
-### Demo
-
-For an example with activities, check out the demo: [Demo](https://github.com/MFlisar/BundleArgs/tree/master/sample/src/main/java/com/michaelflisar/bundlebuilder/sample)
-
-### Credits
-
-This project is generally based on https://github.com/emilsjolander/IntentBuilder but was improved and restructured heavily in the meantime.
-
-### TODO
-
-* conductor/fragment/class demo?
-* ???
