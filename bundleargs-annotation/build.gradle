@@ -24,6 +24,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    publishing {
+        singleVariant("release") {}
+    }
 }
 
 project.afterEvaluate {
@@ -37,11 +41,11 @@ project.afterEvaluate {
                 }
             }
 
-            maven(MavenPublication) {
+            release(MavenPublication) {
+                from components.release
                 groupId 'ro.andob.bundleargs'
                 artifactId 'bundleargs-annotation'
                 version '2.1.4'
-                artifact(bundleReleaseAar)
             }
         }
     }
