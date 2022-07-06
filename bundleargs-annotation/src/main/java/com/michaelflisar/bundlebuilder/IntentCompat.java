@@ -14,7 +14,7 @@ import java.util.Objects;
 public class IntentCompat
 {
     @Nullable
-    public static <T extends Serializable> T getSerializable(Intent intent, String key, Class<T> type)
+    public static <T extends Serializable> T getSerializable(Intent intent, String key, Class<? extends T> type)
     {
         try
         {
@@ -29,7 +29,7 @@ public class IntentCompat
     }
 
     @Nullable
-    public static <T extends Parcelable> T getParcelableExtra(Intent intent, String key, Class<T> type)
+    public static <T extends Parcelable> T getParcelableExtra(Intent intent, String key, Class<? extends T> type)
     {
         try
         {
@@ -44,7 +44,7 @@ public class IntentCompat
     }
 
     @NotNull
-    public static <T extends Parcelable> T[] getParcelableArrayExtra(Intent intent, String key, Class<T> type)
+    public static <T extends Parcelable> T[] getParcelableArrayExtra(Intent intent, String key, Class<? extends T> type)
     {
         try
         {
@@ -59,7 +59,7 @@ public class IntentCompat
     }
 
     @NotNull
-    public static <T extends Parcelable> ArrayList<T> getParcelableArrayListExtra(Intent intent, String key, Class<T> type)
+    public static <T extends Parcelable> ArrayList<T> getParcelableArrayListExtra(Intent intent, String key, Class<? extends T> type)
     {
         try
         {

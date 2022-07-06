@@ -15,7 +15,7 @@ import java.util.Objects;
 public class BundleCompat
 {
     @Nullable
-    public static <T extends Serializable> T getSerializable(Bundle bundle, String key, Class<T> type)
+    public static <T extends Serializable> T getSerializable(Bundle bundle, String key, Class<? extends T> type)
     {
         try
         {
@@ -30,7 +30,7 @@ public class BundleCompat
     }
 
     @Nullable
-    public static <T extends Parcelable> T getParcelable(Bundle bundle, String key, Class<T> type)
+    public static <T extends Parcelable> T getParcelable(Bundle bundle, String key, Class<? extends T> type)
     {
         try
         {
@@ -45,7 +45,7 @@ public class BundleCompat
     }
 
     @NotNull
-    public static <T extends Parcelable> T[] getParcelableArray(Bundle bundle, String key, Class<T> type)
+    public static <T extends Parcelable> T[] getParcelableArray(Bundle bundle, String key, Class<? extends T> type)
     {
         try
         {
@@ -59,7 +59,7 @@ public class BundleCompat
         }
     }
 
-    public static <T extends Parcelable> ArrayList<T> getParcelableArrayList(Bundle bundle, String key, Class<T> type)
+    public static <T extends Parcelable> ArrayList<T> getParcelableArrayList(Bundle bundle, String key, Class<? extends T> type)
     {
         try
         {
@@ -73,7 +73,7 @@ public class BundleCompat
         }
     }
 
-    public static <T extends Parcelable> SparseArray<T> getSparseParcelableArray(Bundle bundle, String key, Class<T> type)
+    public static <T extends Parcelable> SparseArray<T> getSparseParcelableArray(Bundle bundle, String key, Class<? extends T> type)
     {
         try
         {
