@@ -5,7 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.TYPE) @Retention(RetentionPolicy.CLASS)
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.CLASS)
 public @interface BundleBuilder
 {
     boolean useConstructorForMandatoryArgs() default false;

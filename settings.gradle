@@ -1,2 +1,3 @@
 include ':bundleargs-annotation'
 include ':bundleargs-processor'
+include ':test'

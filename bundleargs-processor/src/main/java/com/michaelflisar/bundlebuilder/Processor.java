@@ -269,7 +269,7 @@ public class Processor extends AbstractProcessor {
                 .addParameter(TypeName.get(annotatedElement.asType()), "annotatedClass");
 
         for (ArgElement e : all) {
-            e.addFieldToInjection(injectMethod);
+            e.addFieldToInjection(injectMethod, typeUtils);
         }
 
         builder.addMethod(injectMethod.build());

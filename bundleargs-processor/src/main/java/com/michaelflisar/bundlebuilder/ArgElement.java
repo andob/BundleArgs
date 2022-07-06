@@ -5,9 +5,15 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -120,14 +126,101 @@ public class ArgElement {
         }
     }
 
-    public void addFieldToInjection(MethodSpec.Builder injectMethod) {
+    @SuppressWarnings("DuplicateExpressions")
+    public void addFieldToInjection(MethodSpec.Builder injectMethod, Types typeUtils) {
         if (!mOptional) {
             Util.addContainsCheckWithException(injectMethod, this, "args");
         }
 
-        injectMethod.beginControlFlow("if (args != null && args.containsKey($S))", mParamName)
-                .addStatement("annotatedClass.$N = ($T) args.get($S)", mElement.getSimpleName().toString(), mType, mParamName)
-                .endControlFlow();
+        Map<String, String> primitiveMethodsFromBundleClass = new HashMap<>();
+        primitiveMethodsFromBundleClass.put("boolean", "getBoolean");
+        primitiveMethodsFromBundleClass.put("int", "getInt");
+        primitiveMethodsFromBundleClass.put("long", "getLong");
+        primitiveMethodsFromBundleClass.put("double", "getDouble");
+        primitiveMethodsFromBundleClass.put("byte", "getByte");
+        primitiveMethodsFromBundleClass.put("char", "getChar");
+        primitiveMethodsFromBundleClass.put("short", "getShort");
+        primitiveMethodsFromBundleClass.put("float", "getFloat");
+        primitiveMethodsFromBundleClass.put("java.lang.String", "getString");
+        primitiveMethodsFromBundleClass.put("java.lang.CharSequence", "getCharSequence");
+        primitiveMethodsFromBundleClass.put("boolean[]", "getBooleanArray");
+        primitiveMethodsFromBundleClass.put("int[]", "getIntArray");
+        primitiveMethodsFromBundleClass.put("long[]", "getLongArray");
+        primitiveMethodsFromBundleClass.put("double[]", "getDoubleArray");
+        primitiveMethodsFromBundleClass.put("byte[]", "getByteArray");
+        primitiveMethodsFromBundleClass.put("char[]", "getCharArray");
+        primitiveMethodsFromBundleClass.put("short[]", "getShortArray");
+        primitiveMethodsFromBundleClass.put("float[]", "getFloatArray");
+        primitiveMethodsFromBundleClass.put("java.lang.String[]", "getStringArray");
+        primitiveMethodsFromBundleClass.put("java.lang.CharSequence[]", "getCharSequenceArray");
+
+        injectMethod.beginControlFlow("if (args != null && args.containsKey($S))", mParamName);
+
+        if (primitiveMethodsFromBundleClass.containsKey(mType.toString()))
+        {
+            injectMethod.addStatement("annotatedClass.$N = args.$N($S)",
+                mElement.getSimpleName().toString(),
+                primitiveMethodsFromBundleClass.get(mType.toString()),
+                mParamName);
+        }
+        else if (typeUtils.directSupertypes(mType).stream().anyMatch(supertype -> supertype.toString().equals("java.util.List<java.lang.Integer>")))
+        {
+            injectMethod.addStatement("annotatedClass.$N = args.getIntegerArrayList($S)",
+                mElement.getSimpleName().toString(),
+                mParamName);
+        }
+        else if (typeUtils.directSupertypes(mType).stream().anyMatch(supertype -> supertype.toString().equals("java.util.List<java.lang.String>")))
+        {
+            injectMethod.addStatement("annotatedClass.$N = args.getStringArrayList($S)",
+                mElement.getSimpleName().toString(),
+                mParamName);
+        }
+        else if (typeUtils.directSupertypes(mType).stream().anyMatch(supertype -> supertype.toString().equals("java.util.List<java.lang.CharSequence>")))
+        {
+            injectMethod.addStatement("annotatedClass.$N = args.getCharSequenceArrayList($S)",
+                    mElement.getSimpleName().toString(),
+                    mParamName);
+        }
+        else if (typeUtils.directSupertypes(mType).stream().anyMatch(supertype -> supertype.toString().equals("java.io.Serializable")))
+        {
+            injectMethod.addStatement("annotatedClass.$N = com.michaelflisar.bundlebuilder.BundleCompat.getSerializable(args, $S, $N.class)",
+                mElement.getSimpleName().toString(),
+                mParamName,
+                mType.toString().indexOf('<')!=-1
+                    ?mType.toString().substring(0, mType.toString().indexOf('<'))
+                    :mType.toString());
+        }
+        else if (typeUtils.directSupertypes(mType).stream().anyMatch(supertype -> supertype.toString().equals("android.os.Parcelable")))
+        {
+            injectMethod.addStatement("annotatedClass.$N = com.michaelflisar.bundlebuilder.BundleCompat.getParcelable(args, $S, $N.class)",
+                    mElement.getSimpleName().toString(),
+                    mParamName,
+                    mType.toString().indexOf('<')!=-1
+                        ?mType.toString().substring(0, mType.toString().indexOf('<'))
+                        :mType.toString());
+        }
+        else if (mType.getKind()==TypeKind.ARRAY && typeUtils.directSupertypes(((ArrayType)mType).getComponentType()).stream().anyMatch(supertype -> supertype.toString().equals("java.io.Serializable")))
+        {
+            throw new RuntimeException("@Arg Serializable[] arguments are disallowed! Please Use ArrayList<Serializable>!");
+        }
+        else if (mType.getKind()==TypeKind.ARRAY && typeUtils.directSupertypes(((ArrayType)mType).getComponentType()).stream().anyMatch(supertype -> supertype.toString().equals("android.os.Parcelable")))
+        {
+            injectMethod.addStatement("annotatedClass.$N = com.michaelflisar.bundlebuilder.BundleCompat.getParcelableArray(args, $S, $N.class)",
+                    mElement.getSimpleName().toString(),
+                    mParamName,
+                    ((ArrayType)mType).getComponentType().toString().indexOf('<')!=-1
+                        ?((ArrayType)mType).getComponentType().toString().substring(0, ((ArrayType)mType).getComponentType().toString().indexOf('<'))
+                        :((ArrayType)mType).getComponentType().toString());
+        }
+        else
+        {
+            injectMethod.addStatement("annotatedClass.$N = ($T) args.get($S)",
+                mElement.getSimpleName().toString(),
+                mType,
+                mParamName);
+        }
+
+        injectMethod.endControlFlow();
     }
 
     public void addSetter(TypeSpec.Builder builder, ClassName className, String prefix) {

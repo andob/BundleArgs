@@ -24,7 +24,7 @@ publishing {
         maven(MavenPublication) {
             groupId 'ro.andob.bundleargs'
             artifactId 'bundleargs-processor'
-            version '2.1.4'
+            version '2.1.5'
             from components.java
         }
     }

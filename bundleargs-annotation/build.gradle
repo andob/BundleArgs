@@ -2,22 +2,10 @@ apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
 
 android {
-    if (project.hasProperty('setup.compileSdk'))
-    {
-        compileSdkVersion setup.compileSdk
-        buildToolsVersion setup.buildTools
-        defaultConfig {
-            minSdkVersion setup.minSdk
-            targetSdkVersion setup.targetSdk
-        }
-    }
-    else
-    {
-        compileSdkVersion 33
-        defaultConfig {
-            minSdkVersion 14
-            targetSdkVersion 33
-        }
+    compileSdkVersion 33
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 33
     }
 
     compileOptions {
@@ -28,6 +16,10 @@ android {
     publishing {
         singleVariant("release") {}
     }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
 
 project.afterEvaluate {
@@ -45,7 +37,7 @@ project.afterEvaluate {
                 from components.release
                 groupId 'ro.andob.bundleargs'
                 artifactId 'bundleargs-annotation'
-                version '2.1.4'
+                version '2.1.5'
             }
         }
     }
