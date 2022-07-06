@@ -4,10 +4,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.SparseArray;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
