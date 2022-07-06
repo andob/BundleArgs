@@ -141,6 +141,14 @@ public class ArgElement {
         primitiveMethodsFromBundleClass.put("char", "getChar");
         primitiveMethodsFromBundleClass.put("short", "getShort");
         primitiveMethodsFromBundleClass.put("float", "getFloat");
+        primitiveMethodsFromBundleClass.put("java.lang.Boolean", "getBoolean");
+        primitiveMethodsFromBundleClass.put("java.lang.Integer", "getInt");
+        primitiveMethodsFromBundleClass.put("java.lang.Long", "getLong");
+        primitiveMethodsFromBundleClass.put("java.lang.Double", "getDouble");
+        primitiveMethodsFromBundleClass.put("java.lang.Byte", "getByte");
+        primitiveMethodsFromBundleClass.put("java.lang.Character", "getChar");
+        primitiveMethodsFromBundleClass.put("java.lang.Short", "getShort");
+        primitiveMethodsFromBundleClass.put("java.lang.Float", "getFloat");
         primitiveMethodsFromBundleClass.put("java.lang.String", "getString");
         primitiveMethodsFromBundleClass.put("java.lang.CharSequence", "getCharSequence");
         primitiveMethodsFromBundleClass.put("boolean[]", "getBooleanArray");
@@ -214,7 +222,7 @@ public class ArgElement {
         }
         else
         {
-            injectMethod.addStatement("annotatedClass.$N = ($T) args.get($S)",
+            injectMethod.addStatement("annotatedClass.$N = ($T) args.get"+mType.toString()+"($S)",
                 mElement.getSimpleName().toString(),
                 mType,
                 mParamName);

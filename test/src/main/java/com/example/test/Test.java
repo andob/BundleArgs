@@ -40,6 +40,7 @@ public class Test
     @Arg public long[] someLongArray;
     @Arg public double[] someDoubleArray;
     @Arg public String[] someStringArray;
+    @Arg public Integer someNullableInteger;
 
     public Test(Bundle args)
     {
