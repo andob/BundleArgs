@@ -5,10 +5,8 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
-
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
@@ -18,6 +16,8 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+
+import static com.michaelflisar.bundlebuilder.Util.containsSupertype;
 
 /**
  * Created by Michael on 14.02.2017.
@@ -159,6 +159,14 @@ public class ArgElement {
         primitiveMethodsFromBundleClass.put("char[]", "getCharArray");
         primitiveMethodsFromBundleClass.put("short[]", "getShortArray");
         primitiveMethodsFromBundleClass.put("float[]", "getFloatArray");
+        primitiveMethodsFromBundleClass.put("java.lang.Boolean[]", "getBooleanArray");
+        primitiveMethodsFromBundleClass.put("java.lang.Integer[]", "getIntArray");
+        primitiveMethodsFromBundleClass.put("java.lang.Long[]", "getLongArray");
+        primitiveMethodsFromBundleClass.put("java.lang.Double[]", "getDoubleArray");
+        primitiveMethodsFromBundleClass.put("java.lang.Byte[]", "getByteArray");
+        primitiveMethodsFromBundleClass.put("java.lang.Character[]", "getCharArray");
+        primitiveMethodsFromBundleClass.put("java.lang.Short[]", "getShortArray");
+        primitiveMethodsFromBundleClass.put("java.lang.Float[]", "getFloatArray");
         primitiveMethodsFromBundleClass.put("java.lang.String[]", "getStringArray");
         primitiveMethodsFromBundleClass.put("java.lang.CharSequence[]", "getCharSequenceArray");
 
@@ -171,25 +179,25 @@ public class ArgElement {
                 primitiveMethodsFromBundleClass.get(mType.toString()),
                 mParamName);
         }
-        else if (typeUtils.directSupertypes(mType).stream().anyMatch(supertype -> supertype.toString().equals("java.util.List<java.lang.Integer>")))
+        else if (containsSupertype(typeUtils, mType, "java.util.List<java.lang.Integer>"))
         {
             injectMethod.addStatement("annotatedClass.$N = args.getIntegerArrayList($S)",
                 mElement.getSimpleName().toString(),
                 mParamName);
         }
-        else if (typeUtils.directSupertypes(mType).stream().anyMatch(supertype -> supertype.toString().equals("java.util.List<java.lang.String>")))
+        else if (containsSupertype(typeUtils, mType, "java.util.List<java.lang.String>"))
         {
             injectMethod.addStatement("annotatedClass.$N = args.getStringArrayList($S)",
                 mElement.getSimpleName().toString(),
                 mParamName);
         }
-        else if (typeUtils.directSupertypes(mType).stream().anyMatch(supertype -> supertype.toString().equals("java.util.List<java.lang.CharSequence>")))
+        else if (containsSupertype(typeUtils, mType, "java.util.List<java.lang.CharSequence>"))
         {
             injectMethod.addStatement("annotatedClass.$N = args.getCharSequenceArrayList($S)",
                     mElement.getSimpleName().toString(),
                     mParamName);
         }
-        else if (typeUtils.directSupertypes(mType).stream().anyMatch(supertype -> supertype.toString().equals("java.io.Serializable")))
+        else if (containsSupertype(typeUtils, mType, "java.io.Serializable"))
         {
             injectMethod.addStatement("annotatedClass.$N = com.michaelflisar.bundlebuilder.BundleCompat.getSerializable(args, $S, $N.class)",
                 mElement.getSimpleName().toString(),
@@ -198,7 +206,7 @@ public class ArgElement {
                     ?mType.toString().substring(0, mType.toString().indexOf('<'))
                     :mType.toString());
         }
-        else if (typeUtils.directSupertypes(mType).stream().anyMatch(supertype -> supertype.toString().equals("android.os.Parcelable")))
+        else if (containsSupertype(typeUtils, mType, "android.os.Parcelable"))
         {
             injectMethod.addStatement("annotatedClass.$N = com.michaelflisar.bundlebuilder.BundleCompat.getParcelable(args, $S, $N.class)",
                     mElement.getSimpleName().toString(),
@@ -207,11 +215,13 @@ public class ArgElement {
                         ?mType.toString().substring(0, mType.toString().indexOf('<'))
                         :mType.toString());
         }
-        else if (mType.getKind()==TypeKind.ARRAY && typeUtils.directSupertypes(((ArrayType)mType).getComponentType()).stream().anyMatch(supertype -> supertype.toString().equals("java.io.Serializable")))
+        else if (mType.getKind()==TypeKind.ARRAY &&
+                containsSupertype(typeUtils, ((ArrayType)mType).getComponentType(), "java.io.Serializable"))
         {
             throw new RuntimeException("@Arg Serializable[] arguments are disallowed! Please Use ArrayList<Serializable>!");
         }
-        else if (mType.getKind()==TypeKind.ARRAY && typeUtils.directSupertypes(((ArrayType)mType).getComponentType()).stream().anyMatch(supertype -> supertype.toString().equals("android.os.Parcelable")))
+        else if (mType.getKind()==TypeKind.ARRAY &&
+                containsSupertype(typeUtils, ((ArrayType)mType).getComponentType(), "android.os.Parcelable"))
         {
             injectMethod.addStatement("annotatedClass.$N = com.michaelflisar.bundlebuilder.BundleCompat.getParcelableArray(args, $S, $N.class)",
                     mElement.getSimpleName().toString(),
@@ -222,7 +232,7 @@ public class ArgElement {
         }
         else
         {
-            injectMethod.addStatement("annotatedClass.$N = ($T) args.get"+mType.toString()+"($S)",
+            injectMethod.addStatement("annotatedClass.$N = ($T) args.get($S)",
                 mElement.getSimpleName().toString(),
                 mType,
                 mParamName);

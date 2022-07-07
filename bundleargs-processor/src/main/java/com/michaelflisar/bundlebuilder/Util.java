@@ -7,6 +7,8 @@ import com.squareup.javapoet.MethodSpec;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
+
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -215,5 +217,17 @@ public class Util {
             e = e.getEnclosingElement();
         }
         return ((PackageElement) e).getQualifiedName().toString();
+    }
+
+    public static Set<TypeMirror> getAllSupertypesOfType(Types typeUtils, TypeMirror type) {
+        Set<TypeMirror> supertypes = new HashSet<>(typeUtils.directSupertypes(type));
+        for (TypeMirror supertype : typeUtils.directSupertypes(type)) {
+            supertypes.addAll(getAllSupertypesOfType(typeUtils, supertype));
+        }
+        return supertypes;
+    }
+
+    public static boolean containsSupertype(Types typeUtils, TypeMirror sourceType, String targetTypeName) {
+        return getAllSupertypesOfType(typeUtils, sourceType).stream().anyMatch(supertype -> supertype.toString().equals(targetTypeName));
     }
 }
