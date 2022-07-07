@@ -18,6 +18,8 @@ public class IntentCompat
     {
         try
         {
+            if (intent==null)
+                return null;
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU)
                 return intent.getSerializableExtra(key, type);
             return (T)intent.getSerializableExtra(key);
@@ -33,6 +35,8 @@ public class IntentCompat
     {
         try
         {
+            if (intent==null)
+                return null;
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU)
                 return intent.getParcelableExtra(key, type);
             return (T)intent.getParcelableExtra(key);
@@ -48,6 +52,7 @@ public class IntentCompat
     {
         try
         {
+            Objects.requireNonNull(intent);
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU)
                 return Objects.requireNonNull(intent.getParcelableArrayExtra(key, type));
             return (T[])Objects.requireNonNull(intent.getParcelableArrayExtra(key));
@@ -63,6 +68,7 @@ public class IntentCompat
     {
         try
         {
+            Objects.requireNonNull(intent);
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU)
                 return Objects.requireNonNull(intent.getParcelableArrayListExtra(key, type));
             return (ArrayList<T>)Objects.requireNonNull(intent.getParcelableArrayListExtra(key));

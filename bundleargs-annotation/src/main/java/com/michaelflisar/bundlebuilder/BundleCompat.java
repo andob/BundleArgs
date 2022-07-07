@@ -19,6 +19,8 @@ public class BundleCompat
     {
         try
         {
+            if (bundle==null)
+                return null;
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU)
                 return bundle.getSerializable(key, type);
             return (T)bundle.getSerializable(key);
@@ -34,6 +36,8 @@ public class BundleCompat
     {
         try
         {
+            if (bundle==null)
+                return null;
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU)
                 return bundle.getParcelable(key, type);
             return (T)bundle.getParcelable(key);
@@ -49,6 +53,7 @@ public class BundleCompat
     {
         try
         {
+            Objects.requireNonNull(bundle);
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU)
                 return Objects.requireNonNull(bundle.getParcelableArray(key, type));
             return (T[])Objects.requireNonNull(bundle.getParcelableArray(key));
@@ -63,6 +68,7 @@ public class BundleCompat
     {
         try
         {
+            Objects.requireNonNull(bundle);
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU)
                 return Objects.requireNonNull(bundle.getParcelableArrayList(key, type));
             return (ArrayList<T>)Objects.requireNonNull(bundle.getParcelableArrayList(key));
@@ -77,6 +83,7 @@ public class BundleCompat
     {
         try
         {
+            Objects.requireNonNull(bundle);
             if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU)
                 return Objects.requireNonNull(bundle.getSparseParcelableArray(key, type));
             return (SparseArray<T>)Objects.requireNonNull(bundle.getSparseParcelableArray(key));
