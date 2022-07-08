@@ -3,6 +3,7 @@ package com.example.test;
 import android.os.Bundle;
 import com.michaelflisar.bundlebuilder.Arg;
 import com.michaelflisar.bundlebuilder.BundleBuilder;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +42,7 @@ public class Test
     @Arg public double[] someDoubleArray;
     @Arg public String[] someStringArray;
     @Arg public Integer someNullableInteger;
+    @Arg public Serializable someSerializablez;
 
     public Test(Bundle args)
     {

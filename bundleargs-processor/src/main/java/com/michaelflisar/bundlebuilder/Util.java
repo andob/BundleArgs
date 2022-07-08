@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.AnnotationMirror;
@@ -228,6 +229,7 @@ public class Util {
     }
 
     public static boolean containsSupertype(Types typeUtils, TypeMirror sourceType, String targetTypeName) {
-        return getAllSupertypesOfType(typeUtils, sourceType).stream().anyMatch(supertype -> supertype.toString().equals(targetTypeName));
+        Stream<TypeMirror> stream = getAllSupertypesOfType(typeUtils, sourceType).stream();
+        return sourceType.toString().equals(targetTypeName) || stream.anyMatch(supertype -> supertype.toString().equals(targetTypeName));
     }
 }

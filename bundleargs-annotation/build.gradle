@@ -37,7 +37,7 @@ project.afterEvaluate {
                 from components.release
                 groupId 'ro.andob.bundleargs'
                 artifactId 'bundleargs-annotation'
-                version '2.1.9'
+                version '2.2.0'
             }
         }
     }

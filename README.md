@@ -80,8 +80,8 @@ repositories {
 
 ```
 dependencies {
-    implementation 'ro.andob.bundleargs:bundleargs-annotation:2.1.9'
-    annotationProcessor 'ro.andob.bundleargs:bundleargs-processor:2.1.9'
+    implementation 'ro.andob.bundleargs:bundleargs-annotation:2.2.0'
+    annotationProcessor 'ro.andob.bundleargs:bundleargs-processor:2.2.0'
 }
 ```
 
