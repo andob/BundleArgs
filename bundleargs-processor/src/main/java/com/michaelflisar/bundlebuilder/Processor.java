@@ -306,7 +306,7 @@ public class Processor extends AbstractProcessor {
             }
         }
 
-        Element superClass=getSuperClassElement(annotatedElement);
+        Element superClass = getSuperClassElement(annotatedElement);
         if (superClass!=null)
             getAnnotatedFields(superClass, required, optional);
     }
@@ -318,9 +318,9 @@ public class Processor extends AbstractProcessor {
         Element superClass = superClassType == null ? null : Processor.instance.typeUtils.asElement(superClassType);
         if (superClass != null && superClass.getKind() == ElementKind.CLASS)
         {
-            String superClassNameWithPackage=superClass.asType().toString();
-            if (superClassNameWithPackage.startsWith("java.")||
-                superClassNameWithPackage.startsWith("android.")||
+            String superClassNameWithPackage = superClass.asType().toString();
+            if (superClassNameWithPackage.startsWith("java.") || 
+                superClassNameWithPackage.startsWith("android.") || 
                 superClassNameWithPackage.startsWith("androidx."))
                 return null;
             return superClass;

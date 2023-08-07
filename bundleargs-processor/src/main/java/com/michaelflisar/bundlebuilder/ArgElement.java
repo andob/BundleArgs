@@ -215,12 +215,12 @@ public class ArgElement {
                         ?mType.toString().substring(0, mType.toString().indexOf('<'))
                         :mType.toString());
         }
-        else if (mType.getKind()==TypeKind.ARRAY &&
+        else if (mType.getKind()==TypeKind.ARRAY && 
                 containsSupertype(typeUtils, ((ArrayType)mType).getComponentType(), "java.io.Serializable"))
         {
             throw new RuntimeException("@Arg Serializable[] arguments are disallowed! Please Use ArrayList<Serializable>!");
         }
-        else if (mType.getKind()==TypeKind.ARRAY &&
+        else if (mType.getKind()==TypeKind.ARRAY && 
                 containsSupertype(typeUtils, ((ArrayType)mType).getComponentType(), "android.os.Parcelable"))
         {
             injectMethod.addStatement("annotatedClass.$N = com.michaelflisar.bundlebuilder.BundleCompat.getParcelableArray(args, $S, $N.class)",

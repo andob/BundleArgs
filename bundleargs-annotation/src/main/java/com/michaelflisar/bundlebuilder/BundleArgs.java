@@ -12,7 +12,7 @@ public class BundleArgs
         {
             Class<?> targetClass = target.getClass();
             Class<?> builderClass = Objects.requireNonNull(targetClass.getClassLoader()).loadClass(targetClass.getCanonicalName() + "BundleBuilder");
-            Method injectMethod=builderClass.getDeclaredMethod("inject", Bundle.class, targetClass);
+            Method injectMethod = builderClass.getDeclaredMethod("inject", Bundle.class, targetClass);
             injectMethod.invoke(null, bundle, target);
         }
         catch (Exception ex)
