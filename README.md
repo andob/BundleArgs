@@ -74,7 +74,7 @@ MyFragment fragment = new MyFragmentBundleBuilder()
 
 ```
 repositories {
-    maven { url "https://maven.andob.info/repository/open_source" }
+    maven { url "https://andob.io/repository/open_source" }
 }
 ```
 
