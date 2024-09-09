@@ -113,7 +113,7 @@ public class Processor extends AbstractProcessor {
         createHashMapField(annotatedElement, builder);
 
         // 3) create constructor with all necessary fields
-        createConstructor(annotatedElement, builder, all);
+        createConstructor(builder);
 
         // 4) add methods for all optional fields
         addSetters(name, annotatedElement, builder, required, optional);
@@ -125,13 +125,10 @@ public class Processor extends AbstractProcessor {
         addCreate(annotatedElement, builder);
 
         // 6) add build method to create a bundle
-        addBuildBundleFunction(annotatedElement, builder, all);
+        addBuildBundleFunction(builder, all);
 
         // 7) add inject method to read all fields into an annotated class
         addInjectFunction(annotatedElement, builder, all);
-
-        // 8) add getter functions for each fields
-        addGetters(annotatedElement, builder, all);
 
         return builder.build();
     }
@@ -140,16 +137,9 @@ public class Processor extends AbstractProcessor {
     // Main functions
     // --------------------
 
-    private void createConstructor(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all) {
+    private void createConstructor(TypeSpec.Builder builder) {
         MethodSpec.Builder constructor = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC);
-
-        // if desired, we add all mandatory fields to the constructor
-        boolean useConstructorForMandatoryArgs = annotatedElement.getAnnotation(BundleBuilder.class).useConstructorForMandatoryArgs();
-        for (ArgElement e : all) {
-            //e.addFieldsToClass(builder, useConstructorForMandatoryArgs);
-            e.addToConstructor(constructor, useConstructorForMandatoryArgs);
-        }
 
         builder.addMethod(constructor.build());
     }
@@ -173,23 +163,20 @@ public class Processor extends AbstractProcessor {
     private void addSetters(String name, Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> required, List<ArgElement> optional) {
         List<ArgElement> elementsToPrecess = new ArrayList<>();
 
-        // if desired, we add setters for all required fields
-        if (!annotatedElement.getAnnotation(BundleBuilder.class).useConstructorForMandatoryArgs()) {
-            elementsToPrecess.addAll(required);
-        }
+        // add setters for all required fields
+        elementsToPrecess.addAll(required);
 
         // we always add setters for all optional fields
         elementsToPrecess.addAll(optional);
 
-        String setterPrefix = annotatedElement.getAnnotation(BundleBuilder.class).setterPrefix();
         ClassName className = ClassName.get(Util.getPackageName(annotatedElement), name);
         for (ArgElement e : elementsToPrecess) {
-            e.addSetter(builder, className, setterPrefix);
+            e.addSetter(builder, className);
         }
     }
 
     private void addBuildIntentFunction(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all) {
-        if (!annotatedElement.getAnnotation(BundleBuilder.class).generateIntentBuilder() && !Util.checkIsOrExtendsActivity(elementUtils, typeUtils, annotatedElement)) {
+        if (!Util.checkIsOrExtendsActivity(elementUtils, typeUtils, annotatedElement)) {
             return;
         }
 
@@ -198,10 +185,8 @@ public class Processor extends AbstractProcessor {
                 .addParameter(Context.class, "context")
                 .addStatement("$T intent = new Intent(context, $T.class)", Intent.class, TypeName.get(annotatedElement.asType()));
 
-        boolean useConstructorForMandatoryFields = annotatedElement.getAnnotation(BundleBuilder.class).useConstructorForMandatoryArgs();
-
         for (ArgElement e : all) {
-            e.addFieldToIntent(buildIntentMethod, !useConstructorForMandatoryFields);
+            e.addFieldToIntent(buildIntentMethod);
         }
 
         buildIntentMethod.returns(Intent.class)
@@ -247,14 +232,13 @@ public class Processor extends AbstractProcessor {
         }
     }
 
-    private void addBuildBundleFunction(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all) {
+    private void addBuildBundleFunction(TypeSpec.Builder builder, List<ArgElement> all) {
         MethodSpec.Builder buildMethod = MethodSpec.methodBuilder("build")
                 .addModifiers(Modifier.PUBLIC)
                 .addStatement("$T bundle = new $T()", Bundle.class, Bundle.class);
 
-        boolean useConstructorForMandatoryFields = annotatedElement.getAnnotation(BundleBuilder.class).useConstructorForMandatoryArgs();
         for (ArgElement e : all) {
-            e.addFieldToBundle(elementUtils, typeUtils, messager, buildMethod, !useConstructorForMandatoryFields);
+            e.addFieldToBundle(elementUtils, typeUtils, messager, buildMethod);
         }
 
         buildMethod.returns(Bundle.class)
@@ -273,16 +257,6 @@ public class Processor extends AbstractProcessor {
         }
 
         builder.addMethod(injectMethod.build());
-    }
-
-    private void addGetters(Element annotatedElement, TypeSpec.Builder builder, List<ArgElement> all) {
-        if (!annotatedElement.getAnnotation(BundleBuilder.class).generateGetters()) {
-            return;
-        }
-
-        for (ArgElement e : all) {
-            e.addFieldGetter(annotatedElement, builder);
-        }
     }
 
     // --------------------

@@ -44,7 +44,7 @@ public class MyFragment extends Fragment
 }
 ```
 
-After you hit build, two classes will be generated: ``MyActivityBundleBuilder`` and ``MyFragmentBundleBuilder``:
+After you hit build, two classes will be generated: ``MyActivityBundleBuilder`` and ``MyFragmentBundleBuilder``. You can use them as such:
 
 ```java
 new MyActivityBundleBuilder()
@@ -90,7 +90,7 @@ dependencies {
 ### License
 
 ```
-Copyright 2015 Emil Sjölander, 2018-2021 Dobrescu Andrei
+Copyright 2015 Emil Sjölander, 2018-2024 Dobrescu Andrei
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -7,12 +7,4 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)
-public @interface BundleBuilder
-{
-    boolean useConstructorForMandatoryArgs() default false;
-    String setterPrefix() default "";
-    boolean generateIntentBuilder() default false;
-    boolean generateGetters() default false;
-    boolean isKotlinClass() default false;
-    boolean generatePersist() default false;
-}
+public @interface BundleBuilder {}

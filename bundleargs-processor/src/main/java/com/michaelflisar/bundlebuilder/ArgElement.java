@@ -58,36 +58,11 @@ public class ArgElement {
         }
     }
 
-    public void addToConstructor(MethodSpec.Builder constructor, boolean useConstructorForMandatoryArgs) {
-        if (mOptional) {
-            return;
-        }
-
-        if (useConstructorForMandatoryArgs) {
-            constructor.addParameter(TypeName.get(mType), mParamName);
-            if (!mNullable && !Util.isPrimitiveType(mType)) {
-                Util.addNullCheckWithException(constructor, this, false);
-            }
-
-            constructor
-                    .addStatement("this.$N.put($S, new Pair(true, $N))", Util.FIELD_HASH_MAP_NAME, mParamName, mParamName);
-
-//            constructor
-//                    .addStatement("this.$N = $N", mParamName, mParamName)
-//                    .addStatement("this.$N = true", mParamName + mParamIsSetPostFix);
-        }
-    }
-
-    public void addFieldToIntent(MethodSpec.Builder buildMethod, boolean initPrimitives) {
+    public void addFieldToIntent(MethodSpec.Builder buildMethod) {
         if (!isOptional()) {
             if (!mNullable && !Util.isPrimitiveType(mType)) {
                 Util.addNullCheckWithException(buildMethod, this, true);
             }
-//            else if (initPrimitives)
-//            {
-//                buildMethod
-//                        .addStatement("$N = $L", mParamName, primitiveDefaultValue);
-//            }
         }
         buildMethod
                 .beginControlFlow("if ($N.get($S) != null)", Util.FIELD_HASH_MAP_NAME, mParamName)
@@ -102,7 +77,7 @@ public class ArgElement {
         //buildMethod.addStatement("intent.putExtra($S, $N)", mParamName, mParamName);
     }
 
-    public void addFieldToBundle(Elements elementUtils, Types typeUtils, Messager messager, MethodSpec.Builder buildMethod, boolean initPrimitives) {
+    public void addFieldToBundle(Elements elementUtils, Types typeUtils, Messager messager, MethodSpec.Builder buildMethod) {
         String bundleFunctionName = Util.getBundleFunctionName(elementUtils, typeUtils, messager, mType);
         if (bundleFunctionName != null) {
             if (!isOptional()) {
@@ -241,8 +216,8 @@ public class ArgElement {
         injectMethod.endControlFlow();
     }
 
-    public void addSetter(TypeSpec.Builder builder, ClassName className, String prefix) {
-        builder.addMethod(MethodSpec.methodBuilder(getFieldSetterName(prefix))
+    public void addSetter(TypeSpec.Builder builder, ClassName className) {
+        builder.addMethod(MethodSpec.methodBuilder(mParamName)
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(TypeName.get(mType), mParamName)
                 .addStatement("this.$N.put($S, new Pair(true, $N))", Util.FIELD_HASH_MAP_NAME, mParamName, mParamName)
@@ -274,14 +249,4 @@ public class ArgElement {
     public String getFieldGetterName() {
         return "get" + mParamName.substring(0, 1).toUpperCase() + mParamName.substring(1);
     }
-
-    public String getFieldSetterName(String setterPrefix) {
-        if (setterPrefix == null || setterPrefix.length() == 0) {
-            return mParamName;
-        } else {
-            return setterPrefix + mParamName.substring(0, 1).toUpperCase() + mParamName.substring(1);
-        }
-    }
-
-
 }
