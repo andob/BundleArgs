@@ -2,7 +2,7 @@ package com.michaelflisar.bundlebuilder.sample;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.widget.TextView;
+import android.widget.Button;
 import com.michaelflisar.bundlebuilder.Arg;
 import com.michaelflisar.bundlebuilder.BundleArgs;
 import com.michaelflisar.bundlebuilder.BundleBuilder;
@@ -20,8 +20,10 @@ public class SecondActivity extends Activity
 
         BundleArgs.bind(this, getIntent().getExtras());
 
-        TextView textView = new TextView(this);
-        textView.setText(data.toString());
-        setContentView(textView);
+        Button button = new Button(this);
+        button.setText(data.toString());
+        setContentView(button);
+
+        button.setOnClickListener(v -> finish());
     }
 }

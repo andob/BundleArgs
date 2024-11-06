@@ -37,16 +37,16 @@ public class Data implements Serializable
     public String toString()
     {
         return "Data{"+
-               "someBoolean="+someBoolean+
-               ", someInt="+someInt+
-               ", someLong="+someLong+
-               ", someFloat="+someFloat+
-               ", someDouble="+someDouble+
-               ", someByte="+someByte+
-               ", someChar="+someChar+
-               ", someShort="+someShort+
-               ", someString='"+someString+'\''+
-               ", someStrings="+someStrings+
-               '}';
+               "\nsomeBoolean="+someBoolean+
+               ",\nsomeInt="+someInt+
+               ",\nsomeLong="+someLong+
+               ",\nsomeFloat="+someFloat+
+               ",\nsomeDouble="+someDouble+
+               ",\nsomeByte="+someByte+
+               ",\nsomeChar="+someChar+
+               ",\nsomeShort="+someShort+
+               ",\nsomeString='"+someString+'\''+
+               ",\nsomeStrings="+someStrings+
+               "\n}";
     }
 }

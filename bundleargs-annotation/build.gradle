@@ -2,10 +2,10 @@ apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
 
 android {
-    compileSdk 34
+    compileSdk 35
     defaultConfig {
-        minSdk 14
-        targetSdk 34
+        minSdk 21
+        targetSdk 35
     }
 
     compileOptions {
@@ -38,7 +38,7 @@ project.afterEvaluate {
                 from components.release
                 groupId 'ro.andob.bundleargs'
                 artifactId 'bundleargs-annotation'
-                version '2.2.0'
+                version '2.2.1'
             }
         }
     }
