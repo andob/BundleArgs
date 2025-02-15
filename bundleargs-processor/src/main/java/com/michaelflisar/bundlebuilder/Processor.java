@@ -281,7 +281,7 @@ public class Processor extends AbstractProcessor {
         }
 
         Element superClass = getSuperClassElement(annotatedElement);
-        if (superClass!=null)
+        if (superClass != null)
             getAnnotatedFields(superClass, required, optional);
     }
 
