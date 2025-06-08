@@ -66,9 +66,8 @@ MyFragment fragment = new MyFragmentBundleBuilder()
 
 ### Why?
 
-- Because plain Intents and Bundles are a pain to work it. So much verbosity to do such an easy task, passing arguments from one object to another.
+- Because plain Intents and Bundles are a pain to work it. So much verbosity to do such an easy task, passing arguments from one component to another.
 - Because by using plain Bundle/Intent API, you loose Java/Kotlin greatest power: TYPE SAFETY.
-- Because some of us work on legacy projects and cannot migrate to Google's Jetpack single-activity, fragment + SafeArgs based navigation architecture.
 
 ### Import
 
