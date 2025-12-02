@@ -79,8 +79,8 @@ repositories {
 
 ```
 dependencies {
-    implementation 'ro.andob.bundleargs:bundleargs-annotation:2.2.1'
-    annotationProcessor 'ro.andob.bundleargs:bundleargs-processor:2.2.1'
+    implementation 'ro.andob.bundleargs:bundleargs-annotation:2.2.2'
+    annotationProcessor 'ro.andob.bundleargs:bundleargs-processor:2.2.2'
 }
 ```
 
